@@ -8,7 +8,7 @@
   const marketStatus = new Map();
   const fmt = (n) => n.toLocaleString('tr-TR');
 
-  function render({ el, results, res, plan, rerender }) {
+  function render({ el, results, res, planRes = res, plan, rerender }) {
     const persona = H.fut.galleryMemory().persona;
     const key = `futfusion.galleryTrades.v1.${persona}`;
     let ledger;
@@ -159,7 +159,7 @@
         el('p', { class: 'note', text: `Bu takımda doğrulanan harcama: ${fmt(activeSpent)} coin · Kalan alış bütçesi: ${workflowBudget == null ? 'bütçe gir' : fmt(Math.max(0, workflowBudget - activeSpent)) + ' coin'}` }),
         el('button', { class: 'primary', type: 'button', disabled: marketBusy || !!storageError || !workflowEntries.length || !H.galleryBatch || (buyable.length > 0 && !(workflowBudget > 0)), text: `Tümünü yap · ${workflowEntries.length} kart · ${fmt(workflowBudget || 0)} coin bütçe`, onclick: () => runBatch('all') }),
         el('p', { class: 'note', text: 'Yalnız aktif takım: en ucuzu bul → bütçe içinde al → kulübe girişini kontrol et → aktif satış ilanı aç. Önceki takımların kartlarına geçilmez.' }),
-        el('details', { class: 'trade-settings' }, [el('summary', { text: 'Adımları ayrı ayrı yönet' }),
+        el('div', { class: 'trade-settings workflow-steps' }, [el('h4', { text: 'Adımları ayrı ayrı yönet' }),
         el('button', { type: 'button', disabled: marketBusy || !!storageError || !buyable.length || !H.galleryBatch, text: `1 · ${buyable.length} kartın fiyatını bul`, onclick: () => runBatch('find') }),
         el('button', { type: 'button', disabled: marketBusy || !!storageError || !priced.length || !H.galleryBatch, text: `2 · ${priced.length} kartı al · en fazla ${fmt(buyCap)} coin`, onclick: () => runBatch('buy') }),
         el('button', { type: 'button', disabled: marketBusy || !!storageError || !listable.length || !H.galleryBatch, text: `3 · ${listable.length} kartı hedef fiyatından satışa koy`, onclick: () => runBatch('list') }),
@@ -179,7 +179,7 @@
       } }) : null,
       res ? el('div', { class: 'row' }, [
         el('button', { type: 'button', disabled: marketBusy || !plan?.adds?.length || !!storageError, text: 'Önerilen eksikleri listeye ekle', onclick: () => {
-          const next = C.addPlan(ledger, plan, res, results, known);
+          const next = C.addPlan(ledger, plan, planRes, results, known);
           persist(next.ledger, `${next.added} yeni kart eklendi. Hafızadaki kartlar atlandı. En ucuzu bul ile alış fiyatını araştır; satış beklentisini kendin gir.`);
         } }),
         !plan ? el('p', { class: 'note', text: 'Önce aşağıdaki “Suggest cards for” alanından hedef dereceyi seç.' }) : null,

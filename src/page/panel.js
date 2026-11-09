@@ -10,7 +10,7 @@
   const CSS = H.panelStyles;
   function loadSettings() {
     const defaults = {
-      keepActiveSquad: true, protectFrom: 87, allowMarket: true, untradeablesOnly: false, view: 'sbc', lang: 'tr',
+      keepActiveSquad: true, protectFrom: 87, allowMarket: true, untradeablesOnly: false, view: 'sbc', lang: 'tr', theme: 'light',
       // Streamlined SBCs: the rating range, the most cards a time (empty: the game's limit), the
       // points to reach now (empty: all that's left), where cards come from and what to favour.
       slMinRating: 45, slMaxRating: 86, slMaxCards: null, slPoints: null,
@@ -2090,7 +2090,7 @@
       const close = res.tags.filter((t) => !t.tier && t.count > (t.name === 'Multiples!' ? 1 : 0) && t.next.count - t.count <= 2);
       return el('div', { class: 'set-page' }, [
         gradePanel(res),
-        H.galleryTradeUI.render({ el, res, plan, results: gallerySetResults(state.sets.data), rerender: render }),
+        el('button', { type: 'button', text: 'Eksikleri BUY/SELL bölümünde yönet', onclick: () => setView('trades') }),
         el('section', {}, [
           el('h3', { text: `${t('Cards · {have} of {total}', { have: res.have, total: res.total })}${missing ? t(' · {n} missing', { n: missing }) : ''}` }),
           suggestBar(res, plan),
@@ -2136,7 +2136,6 @@
       const names = [...categories.keys()].sort((a, b) => (a === OTHER) - (b === OTHER) || a.localeCompare(b));
       return [
         known ? null : clubPointer('Load your club in the Club tab so FutFox can check which cards you have.'),
-        H.easySbcUI.render({ el, results, rerender: render }),
         el('section', {}, [
           el('h2', { text: t('Gallery sets') }),
           el('div', { class: 'row' }, [
@@ -2149,7 +2148,6 @@
             : null,
           results.length ? el('p', { class: 'note', text: t('Cards match on player, rating and version. "?" means FutFox can\'t check the version for that slot, so check it in the game. Cards you sold or used in an SBC still count in the Gallery: FutFox keeps every card it has seen in your club in this browser, and for older ones press Pick player to choose the card that is in the slot in the game. Loan cards never count. Bonus tags are worked out from the cards FutFox would use. Build and submit sets in the game.') }) : null,
         ]),
-        H.galleryTradeUI.render({ el, results, rerender: render }),
       ];
     }
 
@@ -2179,18 +2177,25 @@
       ]), savedDataSection(), languageSection()];
     }
 
-    const TABS = ['club', 'sbc', 'gallery'];
+    function renderTrades() {
+      const results = state.sets.data ? gallerySetResults(state.sets.data) : [];
+      const planRes = results.find((r) => r.id === state.openSet);
+      return H.galleryTradeUI.render({ el, results, planRes, plan: planRes ? suggestPlan(planRes) : null, rerender: render });
+    }
+
+    const TABS = ['club', 'sbc', 'gallery', 'easysbc', 'trades'];
+    const galleryTab = (view) => ['gallery', 'easysbc', 'trades'].includes(view);
 
     function setView(view) {
       setSetting('view', view);
-      if (view === 'gallery' && !state.sets.data && !state.sets.loading) loadSets(false);
+      if (galleryTab(view) && !state.sets.data && !state.sets.loading) loadSets(false);
       else render();
     }
 
     // Where the panel is: its tab, and how deep in it (the challenge, then its squad; the Gallery's
     // categories, a category, a set, then picking a player).
     function pageNow(view, entry) {
-      if (view === 'club') return 0;
+      if (view === 'club' || view === 'easysbc' || view === 'trades') return 0;
       if (view === 'gallery') return state.picker && state.openSet != null ? 3 : state.openSet != null ? 2 : state.category != null ? 1 : 0;
       return state.solving || (state.result && state.showSquad) ? (entry ? 1 : 0) : 0;
     }
@@ -2222,8 +2227,11 @@
       state.ink = to;
     }
 
+    new ResizeObserver(() => placeInk()).observe(panel);
+
     function render() {
       applyLang();
+      shadow.host.setAttribute('data-theme', settings.theme === 'dark' ? 'dark' : 'light');
       // Rebuilding the panel keeps the scroll position, unless a set was just opened or closed.
       const before = panel.querySelector('.body');
       const oldScroll = before ? before.scrollTop : 0;
@@ -2235,7 +2243,7 @@
       const entry = selected();
       const streamlined = Boolean(entry) && H.fut.isStreamlined(entry.challenge);
       const known = H.fut.knownClubItems().length;
-      const view = TABS.includes(settings.view) && (settings.view !== 'gallery' || H.fut.galleryEnabled) ? settings.view : 'sbc';
+      const view = TABS.includes(settings.view) && (!galleryTab(settings.view) || H.fut.galleryEnabled) ? settings.view : 'sbc';
       // The Gallery tab shows the Gallery Token until there is an art/gallery.png.
       const tabIcon = (name) => {
         if (name === 'club' && !ART.club) return clubIcon();
@@ -2243,7 +2251,7 @@
         return src ? el('img', { src, alt: '' }) : null;
       };
       const tab = (name, label) => el('button', { type: 'button', role: 'tab', id: `ff-tab-${name}`, 'aria-controls': 'ff-tabpanel', tabindex: view === name ? '0' : '-1', 'aria-selected': String(view === name), onclick: () => setView(name), onkeydown: (event) => {
-        const available = TABS.filter((name) => name !== 'gallery' || H.fut.galleryEnabled);
+        const available = TABS.filter((name) => !galleryTab(name) || H.fut.galleryEnabled);
         let index = available.indexOf(view);
         if (event.key === 'ArrowRight') index += H.i18n.dir() === 'rtl' ? -1 : 1;
         else if (event.key === 'ArrowLeft') index += H.i18n.dir() === 'rtl' ? 1 : -1;
@@ -2257,10 +2265,12 @@
       state.page = page;
       panel.replaceChildren(...[
         grip,
-        el('header', { title: t('Drag to move. Double-click to put it back.') }, [el('div', { class: 'brand' }, [foxIcon(), el('h1', { text: 'FutFusion' })]), el('button', { class: 'close', type: 'button', 'aria-label': t('Minimize FutFox'), title: t('Minimize: fold into the corner'), text: '−', onclick: hidePanel })]),
-        el('div', { class: 'tabs', role: 'tablist' }, [tab('club', t('Club')), tab('sbc', t('SBC')), H.fut.galleryEnabled ? tab('gallery', t('Gallery')) : null, el('span', { class: 'ink', 'aria-hidden': 'true' })]),
+        el('header', { title: t('Drag to move. Double-click to put it back.') }, [el('div', { class: 'brand' }, [foxIcon(), el('h1', { text: 'FutFusion' })]), el('button', { class: 'theme-toggle', type: 'button', text: settings.theme === 'dark' ? 'Açık mod' : 'Koyu mod', 'aria-pressed': String(settings.theme === 'dark'), onclick: () => { setSetting('theme', settings.theme === 'dark' ? 'light' : 'dark'); render(); } }), el('button', { class: 'close', type: 'button', 'aria-label': t('Minimize FutFox'), title: t('Minimize: fold into the corner'), text: '−', onclick: hidePanel })]),
+        el('div', { class: 'tabs', role: 'tablist' }, [tab('club', 'CLUB'), tab('sbc', 'SBC'), ...(H.fut.galleryEnabled ? [tab('gallery', 'GALLERY'), tab('easysbc', 'EASYSBC'), tab('trades', 'BUY/SELL')] : []), el('span', { class: 'ink', 'aria-hidden': 'true' })]),
         view === 'club' ? el('div', { class: 'body' }, renderClub(known))
         : view === 'gallery' ? el('div', { class: 'body' }, renderGallery(known))
+        : view === 'easysbc' ? el('div', { class: 'body' }, [H.easySbcUI.render({ el, results: state.sets.data ? gallerySetResults(state.sets.data) : [], rerender: render })])
+        : view === 'trades' ? el('div', { class: 'body' }, [renderTrades()])
         : state.solving && entry ? el('div', { class: 'body' }, solvingPage(entry))
         : state.result && state.showSquad && entry ? el('div', { class: 'body' }, squadPage(entry))
         : el('div', { class: 'body' }, [
@@ -2307,7 +2317,9 @@
       if (body) {
         body.id = 'ff-tabpanel'; body.setAttribute('role', 'tabpanel'); body.setAttribute('aria-labelledby', `ff-tab-${view}`);
         const intro = view === 'club' ? ['Kulübün', 'Kartlarını güncelle, korumalarını belirle ve çalışma alanını yönet.']
-          : view === 'gallery' ? ['Koleksiyon planı', 'Kadronu seç, bütçeni belirle ve kartlarının ilerlemesini takip et.']
+          : view === 'gallery' ? ['Gallery setleri', 'Kategorileri ve setlerini incele, koleksiyon ilerlemeni takip et.']
+          : view === 'easysbc' ? ['EasySBC', 'EasySBC kadrolarını incele ve eksik kartlarını alış listesine ekle.']
+          : view === 'trades' ? ['Alış / Satış', 'Kart alışlarını, kulübe girişlerini ve satışlarını takip et.']
           : ['Kadro atölyesi', 'Görevi seç, kadronu oluştur ve son kontrolün ardından oyuna yerleştir.'];
         body.prepend(el('div', { class: 'workspace-intro' }, [el('h2', { text: intro[0] }), el('p', { text: intro[1] }),
           el('span', { class: 'workspace-status', text: state.clubLoadedAt ? `${known} kart · Son güncelleme ${new Date(state.clubLoadedAt).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}` : 'Başlamak için Kulüp sekmesinden kartlarını yükle' })]));
@@ -2323,7 +2335,7 @@
       }
     }
 
-    if (H.fut.galleryEnabled && settings.view === 'gallery') loadSets(false);
+    if (H.fut.galleryEnabled && galleryTab(settings.view)) loadSets(false);
     else render();
     return { refresh: refreshChallenges };
   }

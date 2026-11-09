@@ -42,7 +42,10 @@ async function main() {
     await page.addScriptTag({ path: path.join(root, 'src/page/panel-styles.js') });
     await page.addScriptTag({ path: path.join(root, 'src/page/panel.js') });
     await page.evaluate(() => window.FutFox.panel.create().refresh());
-    console.log('Panel created');
+    await page.getByRole('button', { name: 'Koyu mod', exact: true, includeHidden: true }).evaluate(b => b.click());
+    assert.equal(await page.locator('.panel').evaluate(p => getComputedStyle(p).colorScheme), 'dark');
+    assert.equal(await page.evaluate(() => JSON.parse(localStorage.getItem('futfox.settings')).theme), 'dark');
+    console.log('Panel created; dark theme applied and saved');
     await page.locator('.toggle').click();
     await page.getByRole('tab', { name: 'SBC', exact: true }).click();
     await page.getByRole('button', { name: 'Find cheapest squad', exact: true }).click();
@@ -77,11 +80,29 @@ async function main() {
     await page.setViewportSize({ width: 360, height: 1000 });
     assert.ok(await page.locator('.panel').evaluate((panel) => panel.scrollWidth <= panel.clientWidth + 1));
     await page.screenshot({ path: path.join(output, 'mobile-list.png') });
-    await page.getByRole('tab', { name: 'Club', exact: true }).click();
+    await page.getByRole('tab', { name: 'CLUB', exact: true }).click();
     await page.getByRole('button', { name: 'Türkçe', exact: true }).click();
     await page.getByRole('tab', { name: 'SBC', exact: true }).click();
     await page.getByRole('button', { name: 'Kadroyu oyuna yerleştir', exact: true }).waitFor();
     await page.screenshot({ path: path.join(output, 'turkish-workbench.png') });
+    for (const file of ['src/core/gallery-trades.js', 'src/core/easysbc-gallery.js', 'src/page/gallery-trades.js', 'src/page/easysbc-gallery.js']) await page.addScriptTag({ path: path.join(root, file) });
+    await page.evaluate(() => {
+      const H = window.FutFox;
+      H.fut.galleryEnabled = true;
+      H.gallerySource = { load: async () => ({ sets: [], publishedAt: 0 }) };
+    });
+    await page.getByRole('button', { name: 'Açık mod', exact: true }).click();
+    assert.deepEqual(await page.getByRole('tab').allTextContents(), ['CLUB', 'SBC', 'GALLERY', 'EASYSBC', 'BUY/SELL']);
+    await page.getByRole('tab', { name: 'GALLERY', exact: true }).click();
+    await page.getByText('Gallery setleri', { exact: true }).waitFor();
+    assert.equal(await page.locator('.easy-gallery, .gallery-trades').count(), 0);
+    await page.getByRole('tab', { name: 'EASYSBC', exact: true }).click();
+    assert.equal(await page.locator('.easy-gallery').count(), 1);
+    assert.equal(await page.locator('.gallery-trades').count(), 0);
+    await page.getByRole('tab', { name: 'BUY/SELL', exact: true }).click();
+    assert.equal(await page.locator('.gallery-trades').count(), 1);
+    assert.equal(await page.locator('.easy-gallery').count(), 0);
+    assert.ok(await page.locator('.panel').evaluate(p => p.scrollWidth <= p.clientWidth + 1));
     assert.deepEqual(errors, []);
     console.log('Real panel browser check passed: unmet club rule, partial 10-player apply with empty slot, protected manual pick, revalidation, fixed selection retained during re-solve.');
   } finally { await browser.close(); }
