@@ -117,3 +117,13 @@ test('fills a changed slot with a card to buy when the club has none left', () =
   assert.equal(next.squad[0].player.source, 'market');
   assert.deepEqual(next.squad[0].player.positions, [F343[0].typeId]);
 });
+test('search goals change preferences without replacing reported card costs', () => {
+  const base = { positions: [0], rating: 85, quality: 3, nationId: 1, leagueId: 1, clubId: 1, profile: DEFAULT_PROFILES.base };
+  const pool = [{ ...base, key: 'owned', defId: 1, cost: 5000, source: 'club' }, { ...base, key: 'buy', defId: 2, cost: 1000, source: 'market' }];
+  const input = { slots: [{ typeId: 0 }], rules: [], pool, iterations: 50, restarts: 1 };
+  assert.equal(solve(input).squad[0].player.key, 'buy');
+  const owned = solve({ ...input, objective: 'new-spend' });
+  assert.equal(owned.squad[0].player.key, 'owned'); assert.equal(owned.cost, 5000);
+  const protectedValue = solve({ ...input, objective: 'protect-value', pool: [{ ...pool[0], rating: 90, cost: 100 }, { ...pool[1], rating: 83, cost: 500 }] });
+  assert.equal(protectedValue.squad[0].player.key, 'buy');
+});

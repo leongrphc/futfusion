@@ -1250,6 +1250,7 @@
     // The cheapest squad for a challenge with a formation. fixed keeps players where they are
     // ({ [slot index]: player }) so only the other slots are searched.
     async function solveSquad(entry, { fixed, market = settings.allowMarket, iterations } = {}) {
+      const persona = String(H.fut.galleryMemory().persona);
       const c = entry.challenge;
       const slots = H.fut.slotsFor(c);
       if (!slots) throw new Error(t('This SBC uses a formation the app has not loaded yet. Open the challenge first.'));
@@ -1260,6 +1261,7 @@
         slots,
         rules,
         pool,
+        objective: settings.solveObjective || 'balanced',
         fixed,
         iterations,
         requiredSlots: H.fut.requiredSlotsFor(c),
@@ -1268,6 +1270,8 @@
         thresholds: H.fut.chemThresholds(),
         seed: Date.now() % 100000,
       });
+      if (String(H.fut.galleryMemory().persona) !== persona) throw new Error('EA hesabı değişti; önce kulübünü yenile.');
+      result.persona = persona;
       const players = result.squad.map((s) => s.player);
       result.eaChem = H.fut.eaChemistry(c.formation, players);
       result.rules = rules;
@@ -1302,6 +1306,7 @@
       return {
         ...pick,
         kind: 'score',
+        persona: String(H.fut.galleryMemory().persona),
         challengeId: entry.id,
         need,
         remaining,
@@ -1793,6 +1798,9 @@
     function squadOptions() {
       return el('section', {}, [
         el('h2', { text: t('Options') }),
+        el('label', { class: 'field' }, [el('span', { text: 'Çözüm önceliği' }), el('select', { 'aria-label': 'Çözüm önceliği', onchange: (event) => setSetting('solveObjective', event.target.value) },
+          [['balanced', 'Dengeli kart maliyeti'], ['new-spend', 'Yeni coin harcamasını azalt'], ['protect-value', 'Yüksek reytingli kartları sakla']].map(([value, label]) => el('option', { value, selected: (settings.solveObjective || 'balanced') === value, text: label })))]),
+        el('p', { class: 'note', text: 'Öncelik aramaya yön verir. En ucuz çözüm garantisi yoktur. Depoyu öne almak için aşağıdaki kaynak tercihini kullan.' }),
         el('div', { class: 'opt-card' }, [
           el('h3', { text: t('Which cards') }),
           el('div', { class: 'pair' }, [
@@ -1918,6 +1926,8 @@
       state.applyMessage = null;
       render();
       try {
+        if (result.persona != null && String(H.fut.galleryMemory().persona) !== result.persona) throw new Error('Kadro başka EA hesabında oluşturuldu. Kulübünü yenileyip yeniden çöz.');
+        if (result.squad.some((s) => s.player && isProtected(s.player))) throw new Error('Kadrodaki bir kartı korumaya aldın. Önce bu kartı değiştir veya korumasını kaldır.');
         const apply = () => H.squadApply.apply(result);
         const applied = H.accountLock ? await H.accountLock.run(H.fut.galleryMemory().persona, apply) : await apply();
         state.placed = new Set(result.kind === 'score' ? result.squad.map((_, i) => i) : applied.appliedSlots);
@@ -2651,7 +2661,7 @@
 
     // The Club tab: loading the club, what FutFox keeps in this browser, and the language.
     function renderClub(known) {
-      const profileKeys = ['keepActiveSquad', 'protectFrom', 'allowMarket', 'untradeablesOnly', 'storageFirst', 'slKeepSpecial'];
+      const profileKeys = ['keepActiveSquad', 'protectFrom', 'allowMarket', 'untradeablesOnly', 'storageFirst', 'slKeepSpecial', 'solveObjective'];
       const profiles = settings.protectionProfiles || {};
       return [clubSection(known), el('section', { class: 'opt-card' }, [el('h2', { text: 'Koruma profilleri' }),
         el('p', { class: 'note', text: 'Reyting, aktif kadro ve kaynak tercihlerini kaydet. Kart bazında korumalar bu EA hesabına özeldir.' }),
@@ -2660,6 +2670,10 @@
           el('button', { type: 'button', text: `${name} uygula`, disabled: !profiles[name], onclick: () => { for (const key of profileKeys) if (Object.hasOwn(profiles[name], key)) setSetting(key, profiles[name][key]); render(); } }),
         ]))),
         el('details', {}, [el('summary', { text: `Korunan kartlar · ${Object.keys(protectedCards()).length}` }), ...Object.entries(protectedCards()).map(([id, name]) => el('button', { type: 'button', text: `${name} · korumayı kaldır`, onclick: () => toggleProtection({ defId: id, name }) }))]),
+      ]), el('details', { class: 'opt-card' }, [el('summary', { text: 'SBC deposu ve tekrarlar' }),
+        el('p', { class: 'note', text: 'Depodaki kartlar ile şu an kulüp belleğinde bulunan sürümleri karşılaştırır. Güncel liste için kulübünü yenile.' }),
+        ...H.fut.knownStorageItems().slice(0, 100).map((item) => el('p', { class: 'note', text: `${item._staticData?.name || item.name || '#' + item.definitionId} · ${item.rating} reyting${H.fut.knownClubItems().some((club) => String(club.definitionId) === String(item.definitionId)) ? ' · Kulüpte de kopyası var' : ''}` })),
+        !H.fut.knownStorageItems().length ? el('p', { class: 'note', text: 'Depo kartı görünmüyor. Kulübünü yükleyerek kontrol et.' }) : null,
       ]), savedDataSection(), languageSection()];
     }
 

@@ -115,6 +115,8 @@
       return marketPlayer(typeId, r, pick(marketLeagues, rand), nation);
     }
 
+    const searchCost = (p) => input.objective === 'new-spend' && p.source !== 'market' ? p.cost * 0.01
+      : input.objective === 'protect-value' ? p.cost + Math.max(0, p.rating - 82) ** 2 * 1000 : p.cost;
     const maxCost = Math.max(1000, ...pool.map((p) => p.cost), market.enabled ? estimatePrice(maxR, prices) : 0);
     const W = Math.min(2 * maxCost, 60000);
 
@@ -129,8 +131,9 @@
         violation += rule.key === requirements.KEY.TEAM_RATING ? s * 3 : s;
         return { rule, shortfall: s };
       });
-      const cost = filled.reduce((sum, p) => sum + p.cost, 0);
-      return { violation, cost, energy: violation * W + cost, rating: squadRating, chem, ruleResults };
+      const cost = filled.reduce((sum, p) => sum + searchCost(p), 0);
+      const actualCost = filled.reduce((sum, p) => sum + p.cost, 0);
+      return { violation, cost, actualCost, energy: violation * W + cost, rating: squadRating, chem, ruleResults };
     }
 
     function usedKeys(assign) {
@@ -146,7 +149,7 @@
         const options = (byPosition.get(slots[i].typeId) || []).filter((p) => !used.has(identity(p)));
         const fallback = options.length ? options : pool.filter((p) => !used.has(identity(p)));
         let best = null;
-        for (const p of fallback) if (!best || p.cost < best.cost) best = p;
+        for (const p of fallback) if (!best || searchCost(p) < searchCost(best)) best = p;
         if (best) { assign[i] = best; used.add(identity(best)); }
         else if (market.enabled) assign[i] = marketPlayer(slots[i].typeId, minR, pick(marketLeagues, rand), null);
       }
@@ -218,7 +221,7 @@
     return {
       feasible: !!bestFeasible,
       violation: best.violation,
-      cost: best.cost,
+      cost: best.actualCost,
       rating: best.rating,
       chemistry: best.chem.total,
       ruleResults: best.ruleResults,
