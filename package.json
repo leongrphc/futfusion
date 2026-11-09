@@ -1,8 +1,8 @@
 {
   "name": "futfusion-sbc",
-  "version": "0.7.2",
+  "version": "0.8.0",
   "private": true,
-  "description": "FutFox squad planning with AutoPilot-inspired placement into the open SBC. Submission remains manual.",
+  "description": "FutFusion: SBC squad workbench, protected club cards and budget-aware Gallery trading.",
   "license": "GPL-3.0-only",
   "scripts": {
     "test": "node --test \"test/*.test.js\"",
@@ -10,7 +10,8 @@
     "sync-players": "node scripts/sync-players.mjs",
     "preview:gallery": "node scripts/preview-gallery.cjs",
     "check:easysbc": "node scripts/check-easysbc.cjs",
-    "check:squad-editor": "node scripts/check-squad-editor.cjs"
+    "check:squad-editor": "node scripts/check-squad-editor.cjs",
+    "check:background": "node scripts/check-background-solver.cjs"
   },
   "devDependencies": {
     "fast-check": "4.10.2",

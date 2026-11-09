@@ -1,5 +1,25 @@
 # FutFusion SBC
 
+## Güncel sürüm: 0.8.0
+
+Çalışan 0.7.2 hâli Git'te `b90fa30` commit'iyle saklanır. Yeni geliştirmeler ayrı commit'lerdedir.
+
+- **Yeni çalışma alanı:** Açık yüzeyler, mavi ana işlemler, yeşil saha, Türkçe dil seçeneği, dar ekranda liste görünümü ve klavyeyle sekme geçişi.
+- **SBC:** Oyuncudaki **Düzenle** menüsüyle değiştir, kaldır veya bu kart sürümünü kalıcı korumaya al. Oyuncu seçicisinde değişikliğin reyting ve kimya farkını gör. **Geri al / İleri al** düzenlemeleri geri getirir. Son yerleştirme düğmesi daima panelin altında görünür.
+- **Çözüm tercihleri:** Dengeli kart maliyeti, yeni coin harcamasını azaltma veya yüksek reytingli kartları saklama. Kaynak ayarından depoyu öne alabilirsin. Bunlar arama öncelikleridir; mutlak en ucuz çözüm garantisi değildir.
+- **Kulüp:** Koruma profilleri kaydedilebilir. Kart korumaları EA hesabına göre ayrılır. Depo kartları ve kulüpteki kopyaları ayrıca görülebilir.
+- **Gallery:** İşlem aşamaları, devam etme bilgisi, harcanan coin, kalan takım bütçesi, bağlı coin, beklenen gelir ve gerçekleşen net sonuç ayrı gösterilir. Ayrı fiyat/alım/satış işlemleri **Adımları ayrı ayrı yönet** içindedir.
+- **Satış:** Alınmış kartta alış fiyatı, vergi sonrası başa baş veya özel Hemen Al hedefi seçilebilir. **Satış durumunu kontrol et** tam kart kopyasını Transfer Listesi'nden okur; kesin satış ve gerçek fiyat bulunursa kaydı günceller. Kart listede yoksa satıldı varsayılmaz.
+- **Kişisel plan:** EasySBC kadrosunu getirdikten sonra eksiklerin referans bütçesi, elle girilen önceki token kazanımından kalan token ve tahmini coin/token gösterilir. **Karşılaştırmaya ekle** ile getirdiğin setleri karşılaştır; ortak kartların tek sayıldığı planı incele. Karşılaştırma bu oturumdadır; token kazanımın bu hesap için saklanır. İşlem kuyruğu tek aktif takımda kalır.
+- **Geçmiş ve yedek:** Gallery içindeki **Hesap özeti ve işlem günlüğü** ile son 200 kaydı incele. **İşlem geçmişini yedekle** ile alış listesini ve günlüğü dışa/içe aktar. Bu yedek eski Gallery Export dosyasından ayrıdır. İçe aktarma aynı hesabı gerektirir, aktif takım ve bütçeyi sıfırlar; belirsiz mevcut işlem varsa üzerine yazmaz.
+- **Performans:** Normal SBC hesaplaması uzantının arka plan işçisinde çalışır. Panelden iptal edilen sonucun uygulanması engellenir; başlamış yerel hesaplama arka planda tamamlanabilir. Kulüp verileri bu hesaplama için harici servise gönderilmez.
+- **Sekmeler:** Aynı hesap için Gallery işlem sırası ve SBC yerleştirme, tarayıcının ortak işlem kilidini kullanır. Yarım kalan takımda önceki doğrulanmış alışlar toplam bütçeden düşülür.
+
+Uzantıyı `chrome://extensions` üzerinden yenile, sonra Web App'i yenile. Türkçe için **Kulüp → Dil → Türkçe** seç. Önceki dil tercihin korunur. SBC'yi gönderme işlemi sana aittir.
+
+Doğrulama ve sınırlar: [0.8.0 sürüm notları](docs/UPGRADE-0.8.0.md). Aşağıdaki sürüm başlıkları önceki geliştirmelerin ayrıntılı geçmişidir.
+
+
 FutFox SBC planning + an AutoPilot-SBC-inspired squad placement adapter, in one unpacked Chrome extension.
 
 ## Kurulum ve kullanım
