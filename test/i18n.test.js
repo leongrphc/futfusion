@@ -97,3 +97,14 @@ test('parts puts elements where the phrase marks them', () => {
   assert.deepEqual(I.parts('Short by {n}', { n: ['icon', '120'] }), ['ينقص ', 'icon', '120']);
   I.setLang('en');
 });
+test('Turkish covers every existing phrase and preserves replacement values', () => {
+  for (const key of Object.keys(I.AR)) {
+    assert.ok(I.TR[key], key);
+    assert.deepEqual((I.TR[key].match(/\{\w+\}/g) || []).sort(), (key.match(/\{\w+\}/g) || []).sort(), key);
+  }
+  I.setLang('tr');
+  assert.equal(I.t('Find cheapest squad'), 'Uygun kadro bul');
+  assert.equal(I.plural('card', 2), '2 kart');
+  assert.equal(I.locale(), 'tr-TR');
+  I.setLang('en');
+});

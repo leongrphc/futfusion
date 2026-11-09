@@ -501,7 +501,7 @@
 
   function loadSettings() {
     const defaults = {
-      keepActiveSquad: true, protectFrom: 87, allowMarket: true, untradeablesOnly: false, view: 'sbc', lang: 'auto',
+      keepActiveSquad: true, protectFrom: 87, allowMarket: true, untradeablesOnly: false, view: 'sbc', lang: 'tr',
       // Streamlined SBCs: the rating range, the most cards a time (empty: the game's limit), the
       // points to reach now (empty: all that's left), where cards come from and what to favour.
       slMinRating: 45, slMaxRating: 86, slMaxCards: null, slPoints: null,
@@ -941,7 +941,7 @@
 
     // The game's language (Arabic when the Web App is in Arabic) unless one is chosen in Options.
     function applyLang() {
-      const chosen = settings.lang === 'en' || settings.lang === 'ar' ? settings.lang : H.fut.language() === 'ar' ? 'ar' : 'en';
+      const chosen = H.i18n.LANGS.includes(settings.lang) ? settings.lang : H.fut.language() === 'ar' ? 'ar' : 'en';
       H.i18n.setLang(chosen);
       for (const node of [panel, dock]) {
         node.setAttribute('dir', H.i18n.dir());
@@ -1791,7 +1791,7 @@
       return el('section', {}, [
         el('h2', { text: t('Language') }),
         el('div', { class: 'segmented', role: 'group', 'aria-label': t('Language') }, [
-          choice('auto', t('Same as the game')), choice('en', 'English', 'en'), choice('ar', 'العربية', 'ar'),
+          choice('tr', 'Türkçe', 'tr'), choice('auto', t('Same as the game')), choice('en', 'English', 'en'), choice('ar', 'العربية', 'ar'),
         ]),
       ]);
     }
