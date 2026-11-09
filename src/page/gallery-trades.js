@@ -17,6 +17,7 @@
     catch (_) { ledger = C.empty(); storageError = 'Alış listesi okunamadı. Tarayıcı depolamasını kontrol et; kayıtların üzerine yazılmadı.'; }
     const persist = (next, text = '') => {
       if (storageError) return;
+      if (String(H.fut.galleryMemory().persona) !== String(persona)) { message = 'EA hesabı değişti. Listeyi yenile.'; rerender(); return; }
       try {
         root.localStorage.setItem(key, JSON.stringify(next));
         message = text;
@@ -102,6 +103,11 @@
           progress: (event) => {
             if (event.entry) marketStatus.set(`${persona}:${event.entry.key}`, event.text);
             const isError = event.error || (event.summary?.failed || 0) > (batchStatus?.summary?.failed || 0);
+            if (isError) {
+              const saved = C.read(JSON.parse(root.localStorage.getItem(key) || 'null'));
+              saved.events = [...saved.events, { at: Date.now(), key: event.entry?.key || '', name: event.entry?.card.name || '', text: event.text }].slice(-200);
+              root.localStorage.setItem(key, JSON.stringify(saved));
+            }
             const lastError = isError ? `${event.entry?.card.name || 'Oyuncu'}: ${event.text}` : batchStatus?.lastError;
             batchStatus = { ...batchStatus, ...event, name: event.entry?.card.name, persona, mode, lastError };
             rerender();
@@ -281,7 +287,11 @@
           const link = document.createElement('a'); link.href = url; link.download = `futfusion-trades-${Date.now()}.json`; link.click(); setTimeout(() => URL.revokeObjectURL(url), 1000);
         } }),
         el('label', { class: 'file' }, ['Yedeği yükle', el('input', { type: 'file', accept: '.json', disabled: marketBusy, 'aria-label': 'İşlem yedeğini yükle', onchange: async (event) => {
-          try { const file = event.target.files[0]; if (!file) return; if (file.size > 3000000) throw new Error('Yedek en fazla 3 MB olabilir.'); const restored = C.restore(JSON.parse(await file.text()), persona); if (marketBusy) throw new Error('Önce devam eden işlemi bitir.'); persist(restored, 'Yedek yüklendi. Yeni bir kadro seçerek devam edebilirsin.'); }
+          try { const file = event.target.files[0]; if (!file) return; if (file.size > 3000000) throw new Error('Yedek en fazla 3 MB olabilir.'); const restored = C.restore(JSON.parse(await file.text()), persona); if (marketBusy) throw new Error('Önce devam eden işlemi bitir.'); await locked(() => {
+            const current = C.read(JSON.parse(root.localStorage.getItem(key) || 'null'));
+            if (current.entries.some((e) => e.purchaseState || e.listingState && !e.listingVerified)) throw new Error('Önce sonucu belirsiz işlemleri oyunda kontrol ederek çöz. Bu kayıtların üzerine yedek yüklenmedi.');
+            persist(restored, 'Yedek yüklendi. Yeni bir kadro seçerek devam edebilirsin.');
+          }); }
           catch (error) { message = error.message; rerender(); }
         } })]),
       ]),

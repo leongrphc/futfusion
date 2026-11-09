@@ -955,7 +955,7 @@
       return el('details', { class: 'manual-slot-actions' }, [el('summary', { text: player ? 'Düzenle' : 'Oyuncu ekle' }),
         el('button', { type: 'button', disabled: !!state.applying, text: player ? 'Elle değiştir' : 'Oyuncu ekle', onclick: () => openManualPicker(index) }),
         player ? el('button', { type: 'button', disabled: !!state.applying, title: 'Oyuncuyu kaldır; yerine otomatik oyuncu eklenmez.', 'aria-label': `${player.name} oyuncusunu kaldır`, text: 'Kaldır', onclick: () => editSquadSlot(entry, index, null) }) : null,
-        player ? el('button', { type: 'button', disabled: !!state.applying, text: isProtected(player) ? 'Korumayı kaldır' : 'SBC’den koru', onclick: () => toggleProtection(player) }) : null,
+        player?.defId != null ? el('button', { type: 'button', disabled: !!state.applying, text: isProtected(player) ? 'Korumayı kaldır' : 'SBC’den koru', onclick: () => toggleProtection(player) }) : null,
         state.result.manualFixed?.[index] ? el('button', { type: 'button', disabled: !!state.applying, text: 'Sabit ✓', title: 'Elle seçilen kartı serbest bırak', onclick: () => { checkpoint(); const fixed = { ...state.result.manualFixed }; delete fixed[index]; state.result = { ...state.result, manualFixed: fixed }; render(); } }) : null,
       ].filter(Boolean));
     }
@@ -1532,6 +1532,7 @@
         const plain = p.rarity === 0 || p.rarity === 1;
         return el('div', { class: `slot pick${dim ? ' dim' : ''}`, title: `${p.name} ${p.rating} · ${H.fut.leagueName(p.leagueId)} · ${H.fut.nationName(p.nationId)}` }, [
           miniCard({ rarityId: p.rarity, rating: p.rating, playerId: p.playerId, position, name: p.name, badges: H.fut.cardBadges(p, { light: plain }) }),
+          state.squadList ? el('strong', { class: 'list-player-name', text: `${p.rating} · ${p.name}` }) : null,
           el('div', { class: 'pick-line' }, [
             p.untradeable ? el('span', { class: 'untr-ico', role: 'img', title: t('Untradeable'), 'aria-label': t('Untradeable') }) : null,
             el('span', { class: 'chem-pts', role: 'img', title: t('{n} chemistry', { n: chem }), 'aria-label': t('{n} chemistry', { n: chem }) }, [0, 1, 2].map((n) => el('i', { class: n < chem ? 'on' : null }))),
@@ -1555,7 +1556,7 @@
         pitch,
         el('div', { class: 'row' }, [el('button', { type: 'button', disabled: !!state.applying || !!state.solving, text: 'Elle seçtiklerimi koru · kalanı yeniden çöz', onclick: () => solveAroundManual(entry) })]),
         !res.feasible ? el('div', { class: 'error' }, [el('strong', { text: 'Kadro henüz hazır değil' }), el('ul', {}, res.ruleResults.filter((r) => r.shortfall > 0).map((r) => el('li', { text: `${r.rule.label} · ${r.shortfall} eksik` }))), el('span', { text: `${needed - filled} boş yuva. Filtrelerini veya koruma ayarlarını değiştirerek tekrar deneyebilirsin.` })]) : null,
-        !res.feasible ? el('p', { class: 'note', text: 'Kırmızı şartlar sağlanmadı. Solve Squad mevcut oyuncuları yine de yerleştirir; eksik ve market önerisi olan yuvalar boş kalır. Kalanını Web App’te elle tamamlayabilirsin.' }) : null,
+        !res.feasible ? el('p', { class: 'note', text: 'Kırmızı şartlar sağlanmadı. Yerleştirme düğmesi mevcut oyuncuları yine de yerleştirir; eksik ve market önerisi olan yuvalar boş kalır. Kalanını Web App’te elle tamamlayabilirsin.' }) : null,
         buys.length
           ? el('p', { class: 'note', text: t("{cards} to buy. \"Search market\" fills in quality, position, league and nation; the market has no rating filter, so pick a card with the rating shown. You press Search and choose what to buy. Prices for cards you don't own are rough estimates.", { cards: plural('card', buys.length) }) })
           : null,

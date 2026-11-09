@@ -88,6 +88,15 @@ async function main() {
     await page.getByRole('button', { name: '1 · 1 kartın fiyatını bul', exact: true }).click();
     await page.getByText('Son hata: Dimarco: EA işlem hatası: 429. Arama hız sınırına ulaşıldı.', { exact: true }).waitFor();
     await page.screenshot({ path: path.join(output, 'search-error.png') });
+    await page.getByText('İşlem geçmişini yedekle', { exact: true }).click();
+    const downloadPromise = page.waitForEvent('download');
+    await page.getByRole('button', { name: 'Yedeği indir', exact: true }).click();
+    const download = await downloadPromise; const backupPath = await download.path();
+    const backup = JSON.parse(fs.readFileSync(backupPath, 'utf8'));
+    assert.equal(backup.format, 'futfusion-trades'); assert.ok(backup.ledger.events.length > 0);
+    await page.getByLabel('İşlem yedeğini yükle', { exact: true }).setInputFiles({ name: 'backup.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(backup)) });
+    await page.getByText('Yedek yüklendi. Yeni bir kadro seçerek devam edebilirsin.', { exact: true }).waitFor();
+    assert.equal(await page.evaluate(() => JSON.parse(localStorage.getItem('futfusion.galleryTrades.v1.preview-only')).activeBatch), null);
     console.log('Browser smoke passed: only current team processed, old purchased players untouched, budget and workflow verified, 360px layout. Screenshots: ' + output);
   } finally { await browser.close(); }
 }

@@ -127,7 +127,7 @@
     const next = read(ledger);
     next.entries = next.entries.map((entry) => entry.key === key ? { ...entry, ...patch } : entry);
     const entry = next.entries.find((e) => e.key === key);
-    if (entry) next.events = [...next.events, { at: now, key, name: entry.card.name || key, text: text || stage(entry) }].slice(-200);
+    if (entry) next.events = [...next.events, { at: now, key, name: entry.card.name || key, text: text || `${stage(entry)}${patch.buy != null ? ` · Alış ${patch.buy} coin` : ''}${patch.sell != null ? ` · Satış ${patch.sell} coin` : ''}${patch.listPrice != null ? ` · Hedef ${patch.listPrice} coin` : ''}` }].slice(-200);
     return next;
   }
   function backup(ledger, persona) {

@@ -472,7 +472,10 @@
     .manual-slot-actions button { display: block; width: 100%; margin-top: 4px; }
     .squad-list .pitch-row { display: grid; gap: 8px; }
     .squad-list .pitch-row > .slot { max-width: none; display: grid; grid-template-columns: 55px 1fr 110px; align-items: center; gap: 10px; padding: 8px; }
-    .squad-list .card { width: 55px; }
+    .squad-list .card { width: 55px; grid-column: 1; grid-row: 1 / span 3; }
+    .squad-list .list-player-name { grid-column: 2; grid-row: 1; justify-self: start; color: #ECF7F1; font-size: 13px; overflow-wrap: anywhere; }
+    .squad-list .pick-line { grid-column: 2; grid-row: 2; width: 100%; }
+    .squad-list .src { grid-column: 2; grid-row: 3; justify-self: start; }
     .squad-list .manual-slot-actions { grid-column: 3; grid-row: 1 / span 3; }
     .manual-slot-actions button { font-size: 11px; min-height: 30px; padding: 5px 7px; }
     .trade-metrics { background: #FFFFFF; }

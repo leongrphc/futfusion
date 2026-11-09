@@ -72,6 +72,16 @@ async function main() {
     assert.equal(await page.getByRole('button', { name: 'Sabit ✓', exact: true, includeHidden: true }).count(), 1);
     assert.ok((await page.locator('.pitch').innerText()).includes('Manual Target'));
     await page.screenshot({ path: path.join(output, 'edited.png') });
+    await page.getByRole('button', { name: 'Liste görünümü', exact: true }).click();
+    assert.equal(await page.locator('.list-player-name').count(), 11);
+    await page.setViewportSize({ width: 360, height: 1000 });
+    assert.ok(await page.locator('.panel').evaluate((panel) => panel.scrollWidth <= panel.clientWidth + 1));
+    await page.screenshot({ path: path.join(output, 'mobile-list.png') });
+    await page.getByRole('tab', { name: 'Club', exact: true }).click();
+    await page.getByRole('button', { name: 'Türkçe', exact: true }).click();
+    await page.getByRole('tab', { name: 'SBC', exact: true }).click();
+    await page.getByRole('button', { name: 'Kadroyu oyuna yerleştir', exact: true }).waitFor();
+    await page.screenshot({ path: path.join(output, 'turkish-workbench.png') });
     assert.deepEqual(errors, []);
     console.log('Real panel browser check passed: unmet club rule, partial 10-player apply with empty slot, protected manual pick, revalidation, fixed selection retained during re-solve.');
   } finally { await browser.close(); }
