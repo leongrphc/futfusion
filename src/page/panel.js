@@ -1249,14 +1249,14 @@
 
     // The cheapest squad for a challenge with a formation. fixed keeps players where they are
     // ({ [slot index]: player }) so only the other slots are searched.
-    function solveSquad(entry, { fixed, market = settings.allowMarket, iterations } = {}) {
+    async function solveSquad(entry, { fixed, market = settings.allowMarket, iterations } = {}) {
       const c = entry.challenge;
       const slots = H.fut.slotsFor(c);
       if (!slots) throw new Error(t('This SBC uses a formation the app has not loaded yet. Open the challenge first.'));
       const out = keptOut(entry.id);
       const rules = H.fut.rulesFor(c);
       const pool = H.fut.clubPool(poolOptions()).filter((p) => !out.has(p.id) && !isProtected(p));
-      const result = H.solver.solve({
+      const result = await (H.solverAsync || H.solver).solve({
         slots,
         rules,
         pool,
@@ -1358,9 +1358,10 @@
         return;
       }
       // Let the panel paint "Solving..." before the search blocks the page for a moment.
-      setTimeout(() => {
+      setTimeout(async () => {
         try {
-          showResult(solveSquad(entry));
+          const result = await solveSquad(entry);
+          if (state.solving && selected()?.id === entry.id) showResult(result);
         } catch (e) {
           state.error = e.message;
         }
@@ -1372,7 +1373,7 @@
     // Change: keeps that card out of this challenge's suggestions and finds another for its place.
     // In a squad the other players stay where they are, and a card to buy fills the place when no
     // club card fits; a Streamlined SBC's cards are picked again without it.
-    function changePlayer(entry, index) {
+    async function changePlayer(entry, index) {
       if (state.applying || state.solving) return;
       const res = state.result;
       const player = res.squad[index].player;
@@ -1384,7 +1385,9 @@
         } else {
           const fixed = {};
           res.squad.forEach((s, i) => { if (i !== index && s.player) fixed[i] = s.player; });
-          state.result = solveSquad(entry, { fixed, market: true, iterations: 6000 });
+          checkpoint();
+          state.solving = true; render();
+          state.result = await solveSquad(entry, { fixed, market: true, iterations: 6000 });
           state.result.manualFixed = { ...(res.manualFixed || {}) };
           delete state.result.manualFixed[index];
           state.placed.delete(index);
@@ -1394,7 +1397,7 @@
         state.applyMessage = null;
       } catch (e) {
         state.error = e.message;
-      }
+      } finally { state.solving = false; }
       render();
     }
 
@@ -1433,8 +1436,8 @@
       const fixed = { ...(state.result.manualFixed || {}) };
       state.solving = true; state.manualPicker = null; state.error = null; state.applyMessage = null;
       render();
-      setTimeout(() => {
-        try { const result = solveSquad(entry, { fixed }); result.manualFixed = fixed; showResult(result); }
+      setTimeout(async () => {
+        try { const result = await solveSquad(entry, { fixed }); result.manualFixed = fixed; showResult(result); }
         catch (error) { state.error = error.message; }
         finally { state.solving = false; render(); }
       }, 30);
@@ -1883,6 +1886,7 @@
           el('h2', { text: t(streamlined ? 'Suggested cards' : 'Suggested squad') }),
           el('p', { class: 'muted', role: 'status' }, [spinner(), t(streamlined ? 'Asking the game which cards this challenge takes…' : 'Finding the cheapest squad in your club…')]),
           cards,
+          !streamlined && H.solverAsync ? el('button', { type: 'button', text: 'Hesaplamayı iptal et', onclick: () => { H.solverAsync.cancel(); state.solving = false; render(); } }) : null,
         ]),
       ];
     }

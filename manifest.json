@@ -37,6 +37,7 @@
         "src/page/gallery-batch.js",
         "src/page/gallery-trades.js",
         "src/page/easysbc-gallery.js",
+        "src/page/solver-client.js",
         "src/page/panel.js",
         "src/page/main.js"
       ]
@@ -48,7 +49,8 @@
       "world": "ISOLATED",
       "run_at": "document_idle",
       "js": [
-        "src/bridge/easysbc-content.js"
+        "src/bridge/easysbc-content.js",
+        "src/bridge/solver-content.js"
       ]
     }
   ],

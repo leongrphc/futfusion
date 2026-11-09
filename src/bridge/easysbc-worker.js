@@ -1,3 +1,4 @@
+if (typeof importScripts === 'function') importScripts('solver-service.js');
 // Fixed public endpoints only. No tokens, EA identifiers, cookies or club upload.
 chrome.runtime.onMessage.addListener((message, sender, respond) => {
   if (message?.type !== 'EASYSBC_GALLERY_READ') return;
