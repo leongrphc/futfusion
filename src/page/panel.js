@@ -473,7 +473,13 @@
     .pitch .src, .pitch .cap, .pitch .pick-line { color: #ECF7F1; }
     .pitch .card { color: #FFFFFF; }
     .pitch button { background: #FFFFFF; color: #172B46; }
-    .manual-slot-actions { max-width: 140px; gap: 4px; }
+    .manual-slot-actions { max-width: 140px; gap: 4px; display: block; width: 100%; color: #172B46; }
+    .manual-slot-actions summary { cursor: pointer; background: #FFFFFF; padding: 7px; border-radius: 6px; font-size: 11px; text-align: center; }
+    .manual-slot-actions button { display: block; width: 100%; margin-top: 4px; }
+    .squad-list .pitch-row { display: grid; gap: 8px; }
+    .squad-list .pitch-row > .slot { max-width: none; display: grid; grid-template-columns: 55px 1fr 110px; align-items: center; gap: 10px; padding: 8px; }
+    .squad-list .card { width: 55px; }
+    .squad-list .manual-slot-actions { grid-column: 3; grid-row: 1 / span 3; }
     .manual-slot-actions button { font-size: 11px; min-height: 30px; padding: 5px 7px; }
     .trade-metrics { background: #FFFFFF; }
     .trade-metrics span { font-size: 10px; }
@@ -1222,6 +1228,21 @@
       return state.keptOut.get(challengeId);
     }
 
+    const edits = { undo: [], redo: [] };
+    function checkpoint() { if (state.result) { edits.undo.push(state.result); if (edits.undo.length > 30) edits.undo.shift(); edits.redo = []; } }
+    function travelEdit(direction, entry) {
+      const source = edits[direction], target = edits[direction === 'undo' ? 'redo' : 'undo'];
+      if (state.applying || state.solving || !source.length) return;
+      target.push(state.result); state.result = refreshEditedResult(entry, source.pop());
+      state.placed = new Set(); state.applyMessage = null; state.manualPicker = null; state.error = null; render();
+    }
+    function protectedCards() { return settings.protectedByAccount?.[String(H.fut.galleryMemory().persona)] || {}; }
+    function isProtected(player) { return !!protectedCards()[String(player.defId)]; }
+    function toggleProtection(player) {
+      const persona = String(H.fut.galleryMemory().persona), cards = { ...protectedCards() };
+      if (cards[String(player.defId)]) delete cards[String(player.defId)]; else cards[String(player.defId)] = player.name;
+      setSetting('protectedByAccount', { ...settings.protectedByAccount, [persona]: cards }); render();
+    }
     function poolOptions() {
       return { ...settings, protectFrom: Number(settings.protectFrom) || 0 };
     }
@@ -1234,7 +1255,7 @@
       if (!slots) throw new Error(t('This SBC uses a formation the app has not loaded yet. Open the challenge first.'));
       const out = keptOut(entry.id);
       const rules = H.fut.rulesFor(c);
-      const pool = H.fut.clubPool(poolOptions()).filter((p) => !out.has(p.id));
+      const pool = H.fut.clubPool(poolOptions()).filter((p) => !out.has(p.id) && !isProtected(p));
       const result = H.solver.solve({
         slots,
         rules,
@@ -1259,6 +1280,7 @@
     // The cheapest cards for a Streamlined SBC, from the cards its own picker lists (pool), within
     // the Streamlined options.
     function pickScore(entry, pool) {
+      pool = pool.filter((p) => !isProtected(p));
       const c = entry.challenge;
       const out = keptOut(entry.id);
       const min = Number(settings.slMinRating) || 0;
@@ -1305,6 +1327,7 @@
     }
 
     function showResult(result) {
+      edits.undo = []; edits.redo = [];
       state.result = result;
       state.applyMessage = null;
       state.manualPicker = null;
@@ -1384,6 +1407,7 @@
       if (state.applying || state.solving) return;
       try {
         const next = H.squadEditor.setPlayer(state.result, index, player);
+        checkpoint();
         next.manualFixed = { ...(state.result.manualFixed || {}) };
         if (player) { next.manualFixed[index] = player; keptOut(entry.id).delete(player.id); }
         else delete next.manualFixed[index];
@@ -1417,10 +1441,11 @@
     }
 
     function manualSlotControls(entry, index, player) {
-      return el('div', { class: 'manual-slot-actions' }, [
+      return el('details', { class: 'manual-slot-actions' }, [el('summary', { text: player ? 'Düzenle' : 'Oyuncu ekle' }),
         el('button', { type: 'button', disabled: !!state.applying, text: player ? 'Elle değiştir' : 'Oyuncu ekle', onclick: () => openManualPicker(index) }),
         player ? el('button', { type: 'button', disabled: !!state.applying, title: 'Oyuncuyu kaldır; yerine otomatik oyuncu eklenmez.', 'aria-label': `${player.name} oyuncusunu kaldır`, text: 'Kaldır', onclick: () => editSquadSlot(entry, index, null) }) : null,
-        state.result.manualFixed?.[index] ? el('button', { type: 'button', disabled: !!state.applying, text: 'Sabit ✓', title: 'Elle seçilen kartı serbest bırak', onclick: () => { delete state.result.manualFixed[index]; render(); } }) : null,
+        player ? el('button', { type: 'button', disabled: !!state.applying, text: isProtected(player) ? 'Korumayı kaldır' : 'SBC’den koru', onclick: () => toggleProtection(player) }) : null,
+        state.result.manualFixed?.[index] ? el('button', { type: 'button', disabled: !!state.applying, text: 'Sabit ✓', title: 'Elle seçilen kartı serbest bırak', onclick: () => { checkpoint(); const fixed = { ...state.result.manualFixed }; delete fixed[index]; state.result = { ...state.result, manualFixed: fixed }; render(); } }) : null,
       ].filter(Boolean));
     }
 
@@ -1434,13 +1459,14 @@
       const options = picker.includeProtected ? { ...poolOptions(), keepActiveSquad: false, protectFrom: 0, untradeablesOnly: false } : poolOptions();
       const used = new Set(result.squad.filter((s, i) => i !== picker.index && s.player).map((s) => H.squadEditor.identity(s.player)));
       const fold = (value) => String(value).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase('tr-TR');
-      const candidates = H.fut.clubPool(options).filter((p) => !used.has(H.squadEditor.identity(p)))
+      const candidates = H.fut.clubPool(options).filter((p) => !isProtected(p) || picker.includeProtected).filter((p) => !used.has(H.squadEditor.identity(p)))
         .filter((p) => !picker.query.trim() || fold(p.name).includes(fold(picker.query.trim())))
         .filter((p) => !rule || H.requirements.cardMeets(rule, p))
         .filter((p) => !picker.inPosition || p.positions.includes(slot.typeId))
         .sort((a, b) => Number(b.positions.includes(slot.typeId)) - Number(a.positions.includes(slot.typeId)) || a.cost - b.cost || b.rating - a.rating);
       return el('section', { class: 'manual-squad-picker' }, [
         el('div', { class: 'row' }, [el('h3', { text: `${H.fut.positionName(slot.typeId)} · Kulüpten oyuncu seç` }), el('button', { type: 'button', text: 'Seçiciyi kapat', onclick: () => { state.manualPicker = null; render(); } })]),
+        slot.player ? el('p', { class: 'note', text: `Mevcut seçim: ${slot.player.name} · ${slot.player.rating} reyting · ${slot.chemistry || 0} kimya · ${slot.player.storage ? 'depo kartı' : slot.player.untradeable ? 'takas edilemez' : 'kulüp kartı'}${result.manualFixed?.[picker.index] ? ' · elle sabitledin' : ''}. ${result.ruleResults.filter((r) => r.rule.supported && H.requirements.cardMeets(r.rule, slot.player) === true).map((r) => r.rule.label).join(' · ')}` }) : null,
         el('p', { class: 'note', text: 'Seçtiğin oyuncu bu yuvaya eklenir ve sabitlenir. Diğer oyuncular değişmez. Koruma filtreleri açık; istersen aşağıdan korunan kartları da göster.' }),
         el('input', { type: 'search', placeholder: 'Oyuncu adı ara…', 'aria-label': 'Kulüpte oyuncu ara', value: picker.query, oninput: (event) => {
           const caret = event.target.selectionStart;
@@ -1459,6 +1485,7 @@
         el('p', { class: 'note', text: `${candidates.length} uygun kart${candidates.length > 80 ? ' · ilk 80 gösteriliyor; adla daraltabilirsin' : ''}.` }),
         el('div', { class: 'manual-player-list' }, candidates.slice(0, 80).map((p) => el('button', { class: 'manual-player-row', type: 'button', onclick: () => editSquadSlot(entry, picker.index, p) }, [
           el('strong', { text: `${p.rating} · ${p.name}` }),
+          el('span', { text: (() => { const next = refreshEditedResult(entry, H.squadEditor.setPlayer(result, picker.index, p)); return `Reyting ${result.rating} → ${next.rating} · Kimya ${result.chemistry} → ${next.chemistry} · ${next.ruleResults.filter((r) => r.shortfall > 0).length} eksik şart`; })() }),
           el('span', { text: `${p.positions.map((position) => H.fut.positionName(position)).join('/')} · ${p.storage ? 'SBC deposu' : 'Kulüp'}${p.positions.includes(slot.typeId) ? '' : ' · Pozisyon dışı'}` }),
         ]))),
         !candidates.length ? el('p', { class: 'note', text: 'Bu filtrelerde oyuncu bulunamadı. Şart filtresini kaldır, korunan kartları göster veya Club → Load my club ile kulübü yenile.' }) : null,
@@ -1868,7 +1895,8 @@
         state.result.kind === 'score' ? renderScoreResult(entry) : renderResult(entry),
         state.result.kind === 'score' ? null : manualPickerView(entry),
         el('section', {}, [
-          el('h2', { text: 'Otomatik yerleştirme' }),
+          el('h2', { text: 'Oyuna yerleştir' }),
+          state.result.kind !== 'score' ? el('p', { class: 'summary', text: `${state.result.squad.filter((s) => s.player && s.player.source !== 'market').length} oyuncu yerleştirilecek · ${state.result.squad.filter((s, i) => (!state.result.required || state.result.required.has(i)) && (!s.player || s.player.source === 'market')).length} yuva boş kalacak · ${state.result.ruleResults.filter((r) => r.shortfall > 0).length} eksik şart` }) : null,
           el('p', { text: state.result.kind === 'score' ? 'Bu SBC’nin kart seçicisini açıp Solve Squad’a bas. Önerilen kartlar seçilir; gönderme işlemi sana kalır.' : 'Bu SBC’yi Web App’te aç, ardından Solve Squad’a bas. Hesaplanan kadro yerleştirilip kaydedilir.' }),
           el('button', { class: 'primary', type: 'button', disabled: !!state.applying, text: state.applying ? 'Yerleştiriliyor…' : 'Solve Squad', onclick: applyComputedSquad }),
           state.applyMessage ? el('p', { class: 'note', text: state.applyMessage }) : null,
@@ -1997,14 +2025,20 @@
           manualSlotControls(entry, i, p),
         ]);
       };
-      const pitch = el('div', { class: 'pitch' }, pitchRows(formation).map((row) => el('div', { class: 'pitch-row' }, row.map((i) => cell(res.squad[i], i)))));
+      const pitch = el('div', { class: state.squadList ? 'pitch squad-list' : 'pitch' }, pitchRows(formation).map((row) => el('div', { class: 'pitch-row' }, row.map((i) => cell(res.squad[i], i)))));
 
       return el('section', {}, [
         el('h2', { text: t('Suggested squad') }),
         summary,
+        el('div', { class: 'row' }, [
+          el('button', { type: 'button', text: 'Geri al', disabled: !!state.applying || !edits.undo.length, onclick: () => travelEdit('undo', entry) }),
+          el('button', { type: 'button', text: 'İleri al', disabled: !!state.applying || !edits.redo.length, onclick: () => travelEdit('redo', entry) }),
+          el('button', { type: 'button', text: state.squadList ? 'Saha görünümü' : 'Liste görünümü', onclick: () => { state.squadList = !state.squadList; render(); } }),
+        ]),
         rules,
         pitch,
         el('div', { class: 'row' }, [el('button', { type: 'button', disabled: !!state.applying || !!state.solving, text: 'Elle seçtiklerimi koru · kalanı yeniden çöz', onclick: () => solveAroundManual(entry) })]),
+        !res.feasible ? el('div', { class: 'error' }, [el('strong', { text: 'Kadro henüz hazır değil' }), el('ul', {}, res.ruleResults.filter((r) => r.shortfall > 0).map((r) => el('li', { text: `${r.rule.label} · ${r.shortfall} eksik` }))), el('span', { text: `${needed - filled} boş yuva. Filtrelerini veya koruma ayarlarını değiştirerek tekrar deneyebilirsin.` })]) : null,
         !res.feasible ? el('p', { class: 'note', text: 'Kırmızı şartlar sağlanmadı. Solve Squad mevcut oyuncuları yine de yerleştirir; eksik ve market önerisi olan yuvalar boş kalır. Kalanını Web App’te elle tamamlayabilirsin.' }) : null,
         buys.length
           ? el('p', { class: 'note', text: t("{cards} to buy. \"Search market\" fills in quality, position, league and nation; the market has no rating filter, so pick a card with the rating shown. You press Search and choose what to buy. Prices for cards you don't own are rough estimates.", { cards: plural('card', buys.length) }) })
@@ -2612,7 +2646,16 @@
 
     // The Club tab: loading the club, what FutFox keeps in this browser, and the language.
     function renderClub(known) {
-      return [clubSection(known), savedDataSection(), languageSection()];
+      const profileKeys = ['keepActiveSquad', 'protectFrom', 'allowMarket', 'untradeablesOnly', 'storageFirst', 'slKeepSpecial'];
+      const profiles = settings.protectionProfiles || {};
+      return [clubSection(known), el('section', { class: 'opt-card' }, [el('h2', { text: 'Koruma profilleri' }),
+        el('p', { class: 'note', text: 'Reyting, aktif kadro ve kaynak tercihlerini kaydet. Kart bazında korumalar bu EA hesabına özeldir.' }),
+        el('div', { class: 'row' }, ['Günlük', 'Depo temizliği', 'Özel'].map((name) => el('div', {}, [
+          el('button', { type: 'button', text: `${name} kaydet`, onclick: () => { setSetting('protectionProfiles', { ...profiles, [name]: Object.fromEntries(profileKeys.map((key) => [key, settings[key]])) }); render(); } }),
+          el('button', { type: 'button', text: `${name} uygula`, disabled: !profiles[name], onclick: () => { for (const key of profileKeys) if (Object.hasOwn(profiles[name], key)) setSetting(key, profiles[name][key]); render(); } }),
+        ]))),
+        el('details', {}, [el('summary', { text: `Korunan kartlar · ${Object.keys(protectedCards()).length}` }), ...Object.entries(protectedCards()).map(([id, name]) => el('button', { type: 'button', text: `${name} · korumayı kaldır`, onclick: () => toggleProtection({ defId: id, name }) }))]),
+      ]), savedDataSection(), languageSection()];
     }
 
     const TABS = ['club', 'sbc', 'gallery'];

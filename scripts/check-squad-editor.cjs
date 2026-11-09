@@ -36,7 +36,7 @@ async function main() {
         leagueName: () => 'League', nationName: () => 'Nation', positionName: (id) => String(id), cardBadges: () => [],
         galleryCards: () => [], galleryMemory: () => ({ persona: 'mock', memory: { cards: {} } }),
       };
-      localStorage.setItem('futfox.settings', JSON.stringify({ view: 'sbc', keepActiveSquad: true, allowMarket: false }));
+      localStorage.setItem('futfox.settings', JSON.stringify({ lang: 'en', view: 'sbc', keepActiveSquad: true, allowMarket: false }));
     });
     await page.addScriptTag({ path: path.join(root, 'src/page/squad-apply.js') });
     await page.addScriptTag({ path: path.join(root, 'src/page/panel.js') });
@@ -46,11 +46,17 @@ async function main() {
     await page.getByRole('tab', { name: 'SBC', exact: true }).click();
     await page.getByRole('button', { name: 'Find cheapest squad', exact: true }).click();
     await page.getByText('Could not meet every rule', { exact: true }).waitFor();
+    await page.locator('.manual-slot-actions summary').first().click();
     await page.getByRole('button', { name: /oyuncusunu kaldır$/ }).first().click();
-    assert.equal(await page.getByRole('button', { name: 'Oyuncu ekle', exact: true }).count(), 1);
+    assert.equal(await page.getByRole('button', { name: 'Oyuncu ekle', exact: true, includeHidden: true }).count(), 1);
+    await page.getByRole('button', { name: 'Geri al', exact: true }).click();
+    assert.equal(await page.getByRole('button', { name: 'Oyuncu ekle', exact: true, includeHidden: true }).count(), 0);
+    await page.getByRole('button', { name: 'İleri al', exact: true }).click();
+    assert.equal(await page.getByRole('button', { name: 'Oyuncu ekle', exact: true, includeHidden: true }).count(), 1);
     await page.getByRole('button', { name: 'Solve Squad', exact: true }).click();
     await page.getByText(/10 oyuncu yerleştirildi ve kaydedildi\. 1 yuva boş bırakıldı/).waitFor();
     assert.equal(await page.evaluate(() => window.savedSquads.at(-1).filter(Boolean).length), 10);
+    await page.locator('.manual-slot-actions').filter({ has: page.getByRole('button', { name: 'Oyuncu ekle', exact: true, includeHidden: true }) }).locator('summary').click();
     await page.getByRole('button', { name: 'Oyuncu ekle', exact: true }).click();
     await page.getByLabel('Korunan / aktif kadro kartlarını da göster', { exact: true }).check();
     await page.getByRole('searchbox', { name: 'Kulüpte oyuncu ara', exact: true }).pressSequentially('Manual');
@@ -59,10 +65,10 @@ async function main() {
     await page.screenshot({ path: path.join(output, 'picker.png') });
     await page.getByRole('button', { name: /74 · Manual Target/ }).click();
     await page.getByText('Meets the rules', { exact: true }).waitFor();
-    assert.equal(await page.getByRole('button', { name: 'Sabit ✓', exact: true }).count(), 1);
+    assert.equal(await page.getByRole('button', { name: 'Sabit ✓', exact: true, includeHidden: true }).count(), 1);
     await page.getByRole('button', { name: 'Elle seçtiklerimi koru · kalanı yeniden çöz', exact: true }).click();
     await page.getByText('Meets the rules', { exact: true }).waitFor();
-    assert.equal(await page.getByRole('button', { name: 'Sabit ✓', exact: true }).count(), 1);
+    assert.equal(await page.getByRole('button', { name: 'Sabit ✓', exact: true, includeHidden: true }).count(), 1);
     assert.ok((await page.locator('.pitch').innerText()).includes('Manual Target'));
     await page.screenshot({ path: path.join(output, 'edited.png') });
     assert.deepEqual(errors, []);
