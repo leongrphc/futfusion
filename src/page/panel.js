@@ -1918,7 +1918,8 @@
       state.applyMessage = null;
       render();
       try {
-        const applied = await H.squadApply.apply(result);
+        const apply = () => H.squadApply.apply(result);
+        const applied = H.accountLock ? await H.accountLock.run(H.fut.galleryMemory().persona, apply) : await apply();
         state.placed = new Set(result.kind === 'score' ? result.squad.map((_, i) => i) : applied.appliedSlots);
         state.applyMessage = result.kind === 'score' ? 'Önerilen kartlar seçildi. Puanı EA ekranında kontrol edip kendin gönder.'
           : `${applied.count} oyuncu yerleştirildi ve kaydedildi.${applied.empty ? ` ${applied.empty} yuva boş bırakıldı.` : ''} ${applied.partial ? 'Eksikleri ve karşılanmayan şartları Web App’te elle düzelt.' : 'EA ekranındaki şartları kontrol edip kendin gönder.'}`;

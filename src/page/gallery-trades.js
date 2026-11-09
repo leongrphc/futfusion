@@ -46,7 +46,7 @@
       const latest = C.read(JSON.parse(root.localStorage.getItem(key) || 'null'));
       persist(C.record(latest, entry.key, patch));
     };
-    const marketAction = async (entry, buying = false, displayedPrice = null) => {
+    const marketActionInner = async (entry, buying = false, displayedPrice = null) => {
       if (marketBusy) return;
       marketBusy = true;
       const statusKey = `${persona}:${entry.key}`;
@@ -77,7 +77,7 @@
         }
       } finally { marketBusy = false; rerender(); }
     };
-    const runBatch = async (mode) => {
+    const runBatchInner = async (mode) => {
       if (marketBusy) return;
       const activeId = ledger.activeBatch?.id;
       if (!activeId) return;
@@ -87,7 +87,11 @@
       batchStatus = { persona, mode, index: 0, total: tasks.length, text: 'Başlıyor…' };
       rerender();
       try {
-        const summary = await H.galleryBatch.run({ mode, entries: tasks, budget: workflowBudget ?? 0,
+        const current = C.read(JSON.parse(root.localStorage.getItem(key) || 'null'));
+        if (current.activeBatch?.id !== activeId) throw new Error('Aktif takım değişti. Listeyi yenile.');
+        if (mode === 'all' && current.workflowBudget == null) { current.workflowBudget = workflowBudget ?? 0; root.localStorage.setItem(key, JSON.stringify(current)); }
+        const spentBefore = C.activeEntries(current).filter((e) => e.bought).reduce((sum, e) => sum + (e.buy || 0), 0);
+        const summary = await H.galleryBatch.run({ mode, entries: tasks, budget: Math.max(0, (current.workflowBudget ?? workflowBudget ?? 0) - spentBefore),
           getEntry: (entryKey) => {
             if (String(H.fut.galleryMemory().persona) !== String(persona)) throw new Error('EA hesabı değişti.');
             const latest = C.read(JSON.parse(root.localStorage.getItem(key) || 'null'));
@@ -107,6 +111,12 @@
       } catch (error) { batchStatus = { ...batchStatus, text: error.message, finished: true }; }
       finally { marketBusy = false; rerender(); }
     };
+    const locked = async (action) => {
+      try { return H.accountLock ? await H.accountLock.run(persona, action) : await action(); }
+      catch (error) { message = error.message; rerender(); }
+    };
+    const marketAction = (...args) => locked(() => marketActionInner(...args));
+    const runBatch = (...args) => locked(() => runBatchInner(...args));
     const priceField = (entry, field, label) => el('label', {}, [
       el('span', { text: label }),
       el('input', { type: 'number', min: '0', step: '1', inputmode: 'numeric', disabled: marketBusy, value: entry[field] ?? '', placeholder: 'Bilinmiyor',
@@ -128,6 +138,7 @@
         el('div', {}, [el('span', { text: 'SATIŞA HAZIR' }), el('strong', { text: `${listable.length} kart` }), el('small', { text: `${fmt(resaleTotal)} coin · alış fiyatlarından` })]),
         el('div', {}, [el('span', { text: 'TAHMİNİ VERGİ KAYBI' }), el('strong', { text: `${fmt(listable.reduce((sum, e) => sum + Math.ceil(e.buy * ledger.taxPercent / 100), 0))}` }), el('small', { text: `%${ledger.taxPercent} varsayımıyla, hepsi satılırsa` })]),
       ]),
+      entries.some((e) => e.bought && !e.sold && !e.listingVerified) ? el('p', { class: 'trade-progress', text: 'Yarım kalan takım: Tümünü yap ile alınmış kartlardan devam edebilirsin. Doğrulanan alışlar tekrarlanmaz; mevcut harcamalar toplam bütçeden düşülür.' }) : null,
       el('div', { class: 'trade-batch' }, [
         el('label', { class: 'workflow-budget' }, [
           el('span', { text: 'Tümünü yap · toplam alış bütçesi (coin)' }),

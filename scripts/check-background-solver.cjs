@@ -25,6 +25,14 @@ const path = require('node:path');
       return { ticks, actual: actual.squad.map((s) => s.player.id), expected: expected.squad.map((s) => s.player.id), rebound: actual.squad.every((s) => s.player.item === pool.find((p) => p.id === s.player.id).item), cancelled };
     });
     assert.deepEqual(result.actual, result.expected); assert.ok(result.rebound); assert.ok(result.ticks > 0); assert.ok(result.cancelled);
+    await page.evaluate(() => { window.held = window.FutFox.accountLock.run('same-account', () => new Promise((resolve) => { window.unlock = resolve; })); });
+    await page.waitForFunction(() => window.unlock);
+    const second = await context.newPage(); await second.goto('https://www.ea.com/ea-sports-fc/ultimate-team/web-app/');
+    await second.waitForFunction(() => window.FutFox?.accountLock);
+    const blocked = await second.evaluate(async () => { try { await window.FutFox.accountLock.run('same-account', () => true); return false; } catch (error) { return error.message.includes('başka bir sekmede'); } });
+    assert.ok(blocked);
+    await page.evaluate(async () => { window.unlock(); await window.held; });
+    assert.equal(await second.evaluate(() => window.FutFox.accountLock.run('same-account', () => true)), true);
     console.log('Extension worker check passed: deterministic results, original EA objects restored, responsive page, cancellation.');
   } finally { await context.close(); }
 })().catch((error) => { console.error(error); process.exitCode = 1; });

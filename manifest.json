@@ -34,6 +34,7 @@
         "src/page/art.js",
         "src/page/squad-apply.js",
         "src/page/gallery-market.js",
+        "src/page/account-lock.js",
         "src/page/gallery-batch.js",
         "src/page/gallery-trades.js",
         "src/page/easysbc-gallery.js",
