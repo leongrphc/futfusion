@@ -59,6 +59,31 @@
       slots: selection.cards.map((card) => ({ slot: { kind: 'card', playerId: card.playerId, rating: card.rating, rarityId: card.rarityId } })) };
     return trades.addPlan(ledger, { adds: selection.cards.map((card, index) => ({ card, index })) }, target, [...results, target], knownCards);
   }
-  const api = { catalog, preview, merge };
+  function personal(selection, knownCards = [], earned = 0, taxPercent = 5) {
+    const known = new Set(knownCards.filter((c) => !c.loan).map(trades.cardKey));
+    const missing = selection.cards.filter((card) => !known.has(trades.cardKey(card)));
+    const tokens = selection.set.options.find((o) => o.grade === selection.grade)?.tokens || 0;
+    const remainingTokens = Math.max(0, tokens - Math.max(0, Number(earned) || 0));
+    const unknown = missing.filter((card) => card.referencePrice == null).length;
+    const budget = unknown ? null : missing.reduce((n, card) => n + card.referencePrice, 0);
+    const taxLoss = budget == null ? null : missing.reduce((n, card) => n + Math.ceil(card.referencePrice * taxPercent / 100), 0);
+    return { missing, remainingTokens, tokens, budget, taxLoss, unknown, ratio: remainingTokens > 0 && taxLoss != null ? taxLoss / remainingTokens : Infinity };
+  }
+  function combine(selections, knownCards = []) {
+    const known = new Set(knownCards.filter((c) => !c.loan).map(trades.cardKey));
+    const cards = new Map();
+    for (const selection of selections) for (const card of selection.cards) {
+      const key = trades.cardKey(card); if (known.has(key)) continue;
+      if (!cards.has(key)) cards.set(key, { card, sets: [] });
+      const row = cards.get(key);
+      if (!row.sets.includes(selection.set.name)) row.sets.push(selection.set.name);
+      // A higher reference is conservative when two source snapshots disagree.
+      if (card.referencePrice != null && (row.card.referencePrice == null || card.referencePrice > row.card.referencePrice)) row.card = card;
+    }
+    const items = [...cards.values()].sort((a, b) => b.sets.length - a.sets.length);
+    return { items, unknown: items.filter((e) => e.card.referencePrice == null).length,
+      budget: items.some((e) => e.card.referencePrice == null) ? null : items.reduce((n, e) => n + e.card.referencePrice, 0) };
+  }
+  const api = { personal, combine, catalog, preview, merge };
   if (node) module.exports = api; else root.FutFox.easySbcGallery = api;
 })(globalThis);

@@ -60,3 +60,14 @@ test('preserves foil distinction and ignores external collected flags', () => {
   const preview = E.preview(data, set, 'S');
   assert.equal(preview.cards[0].foil, true); assert.equal(preview.missing.length, 15);
 });
+test('personal plans subtract remembered versions and previously earned tokens', () => {
+  const set = { id: 1, name: 'A', options: [{ grade: 'S', tokens: 10 }] };
+  const cards = [{ defId: 1, referencePrice: 1000 }, { defId: 2, referencePrice: 2000 }];
+  const p = E.personal({ set, grade: 'S', cards }, [cards[0]], 5);
+  assert.equal(p.budget, 2000); assert.equal(p.remainingTokens, 5); assert.equal(p.ratio, 20);
+  assert.equal(E.personal({ set, grade: 'S', cards: [{ defId: 3, referencePrice: null }] }).budget, null);
+});
+test('joint plan counts shared exact versions once with conservative reference cost', () => {
+  const result = E.combine([{ set: { name: 'A' }, cards: [{ defId: 1, referencePrice: 1000 }] }, { set: { name: 'B' }, cards: [{ defId: 1, referencePrice: 1200 }] }]);
+  assert.equal(result.items.length, 1); assert.equal(result.items[0].sets.length, 2); assert.equal(result.budget, 1200);
+});

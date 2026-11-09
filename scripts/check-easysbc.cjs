@@ -54,6 +54,8 @@ async function main() {
     const add = page.getByRole('button', { name: /^15 eksik kartı alış listesine ekle$/ });
     await add.waitFor({ timeout: 25000 });
     const output = path.join(root, 'artifacts/easysbc'); fs.mkdirSync(output, { recursive: true });
+    await page.getByRole('button', { name: 'Karşılaştırmaya ekle', exact: true }).click();
+    await page.getByText('Kişisel set karşılaştırması · 1 set', { exact: true }).waitFor();
     await page.screenshot({ path: path.join(output, 'live-public-preview.png') });
     await add.click();
     const entries = await page.evaluate(() => JSON.parse(localStorage.getItem('futfusion.galleryTrades.v1.public-api-test')).entries);
