@@ -32,8 +32,8 @@
     const buyable = entries.filter((e) => !e.bought && !e.purchaseState && !e.sold);
     const priced = buyable.map((entry) => ({ entry, quote: H.galleryMarket?.peek(entry.card) })).filter((e) => e.quote);
     const buyCap = priced.reduce((sum, e) => sum + e.quote.price, 0);
-    const listable = entries.filter((e) => e.bought && e.confirmed && !e.sold && !e.listingState && e.purchasedItemId && H.galleryMarket?.validPrice?.(e.buy));
-    const resaleTotal = listable.reduce((sum, e) => sum + e.buy, 0);
+    const listable = entries.filter((e) => e.bought && e.confirmed && !e.sold && !e.listingState && e.purchasedItemId && H.galleryMarket?.validPrice?.(e.listPrice ?? e.buy));
+    const resaleTotal = listable.reduce((sum, e) => sum + (e.listPrice ?? e.buy), 0);
     const workflowEntries = entries.filter((e) => !e.sold && !(e.listingState === 'listed' && e.listingVerified) && !e.purchaseState);
     const workflowBudget = ledger.workflowBudget ?? (priced.length === buyable.length ? buyCap : null);
     const strictWrite = (entryKey, patch) => {
@@ -122,7 +122,7 @@
       el('input', { type: 'number', min: '0', step: '1', inputmode: 'numeric', disabled: marketBusy, value: entry[field] ?? '', placeholder: 'Bilinmiyor',
         onchange: (event) => {
           const value = C.finitePrice(event.target.value);
-          if (event.target.value !== '' && value == null) { message = 'Fiyat sıfır veya pozitif tam sayı olmalı.'; rerender(); return; }
+          if (event.target.value !== '' && (value == null || field === 'listPrice' && (!H.galleryMarket?.validPrice(value) || value < 200))) { message = 'Fiyat sıfır veya pozitif tam sayı olmalı.'; rerender(); return; }
           update(entry, { [field]: value });
         } }),
     ]);
@@ -154,10 +154,10 @@
         el('details', { class: 'trade-settings' }, [el('summary', { text: 'Adımları ayrı ayrı yönet' }),
         el('button', { type: 'button', disabled: marketBusy || !!storageError || !buyable.length || !H.galleryBatch, text: `1 · ${buyable.length} kartın fiyatını bul`, onclick: () => runBatch('find') }),
         el('button', { type: 'button', disabled: marketBusy || !!storageError || !priced.length || !H.galleryBatch, text: `2 · ${priced.length} kartı al · en fazla ${fmt(buyCap)} coin`, onclick: () => runBatch('buy') }),
-        el('button', { type: 'button', disabled: marketBusy || !!storageError || !listable.length || !H.galleryBatch, text: `3 · ${listable.length} kartı alış fiyatından satışa koy`, onclick: () => runBatch('list') }),
+        el('button', { type: 'button', disabled: marketBusy || !!storageError || !listable.length || !H.galleryBatch, text: `3 · ${listable.length} kartı hedef fiyatından satışa koy`, onclick: () => runBatch('list') }),
         ]),
       ]),
-      el('p', { class: 'note', text: 'Gösterilen kart tavanları ve toplam bütçe aşılmaz. Satışta Hemen Al = alış fiyatı; EA gereği başlangıç bir alt fiyat kademesidir. Süre 1 saat. Açık artırmada daha düşük tutara satılabilir; vergi de kesilir.' }),
+      el('p', { class: 'note', text: 'Toplam alış bütçesi ve kart tavanları aşılmaz. Satış hedefi varsayılan olarak alış fiyatıdır; karttan değiştirebilirsin. Başlangıç teklifi bir alt kademedir. Süre 1 saat; satışta vergi uygulanır.' }),
       batchStatus && String(batchStatus.persona) === String(persona) ? el('div', { class: 'trade-progress', role: 'status', 'aria-live': 'polite' }, [
         el('strong', { text: batchStatus.finished ? 'İşlem sonucu' : `${batchStatus.index} / ${batchStatus.total} · ${batchStatus.name || 'Toplu işlem'}` }),
         el('span', { text: batchStatus.text }),
@@ -230,6 +230,22 @@
             } }),
           ]) : null,
           el('div', { class: 'trade-prices' }, [priceField(entry, 'buy', 'Alış fiyatı'), priceField(entry, 'sell', 'Satış fiyatı / beklenti')]),
+          entry.bought && !entry.listingState && !entry.sold ? el('details', { class: 'trade-settings' }, [el('summary', { text: 'Satış fiyatını belirle' }),
+            el('p', { class: 'note', text: `Hemen Al hedefi: ${fmt(entry.listPrice ?? entry.buy ?? 0)} coin. Hedef fiyattan satış gerçekleşirse vergi sonrası sonuç: ${entry.buy == null ? '?' : fmt((entry.listPrice ?? entry.buy) - Math.ceil((entry.listPrice ?? entry.buy) * ledger.taxPercent / 100) - entry.buy)} coin. Başlangıç teklifi bir alt kademedir; daha düşük fiyata satış olabilir.` }),
+            el('div', { class: 'row' }, [
+              el('button', { type: 'button', text: 'Alış fiyatını kullan', disabled: marketBusy, onclick: () => update(entry, { listPrice: null }) }),
+              el('button', { type: 'button', text: `Vergi sonrası başa baş · ${fmt(C.breakEven(entry.buy, ledger.taxPercent) || 0)}`, disabled: marketBusy || !C.breakEven(entry.buy, ledger.taxPercent), onclick: () => update(entry, { listPrice: C.breakEven(entry.buy, ledger.taxPercent) }) }),
+            ]), priceField(entry, 'listPrice', 'Özel Hemen Al fiyatı'),
+          ]) : null,
+          entry.purchasedItemId && !entry.sold && H.galleryMarket?.inspectSale ? el('button', { type: 'button', disabled: marketBusy, text: 'Satış durumunu kontrol et', onclick: () => locked(async () => {
+            if (marketBusy) return; marketBusy = true; rerender();
+            try { const sale = await H.galleryMarket.inspectSale(entry);
+              if (sale.state === 'sold') update(entry, { bought: true, confirmed: true, sold: true, sell: sale.price, purchaseState: null });
+              else if (sale.state === 'listed') update(entry, { listingState: 'listed', listingVerified: true, listedPrice: sale.price, sell: sale.price });
+              else { message = sale.state === 'inactive' ? 'Kart Transfer Listesi’nde, aktif ilanı yok. Satış durumu yeniden açıldı.' : 'Satış sonucu kesinleşmedi. Transfer Listesi’ni oyunda kontrol et; kayıt değiştirilmedi.'; if (sale.state === 'inactive') update(entry, { listingState: null, listingVerified: false }); }
+            } catch (error) { message = error.message; }
+            finally { marketBusy = false; rerender(); }
+          }) }) : null,
           el('p', { text: value.cost == null ? 'Net maliyet için iki fiyatı da gir.' : `Tahmini vergi: ${fmt(value.tax)} · Net maliyet: ${fmt(value.cost)}` }),
           observed && !entry.confirmed ? el('p', { class: 'note', text: 'Bu sürüm kulüp hafızasında görülmüş. Gallery’de sayıldığını oyunda ayrıca kontrol et.' }) : null,
           el('div', { class: 'row' }, [

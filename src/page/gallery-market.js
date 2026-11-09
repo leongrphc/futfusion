@@ -179,7 +179,7 @@
     if (typeof root.services.Item.requestTransferItems !== 'function') throw new Error('EA Transfer Listesi doğrulama arayüzü bulunamadı.');
     const result = await request(root.services.Item.requestTransferItems());
     const data = Array.isArray(result.response?.items) ? result.response : result.data ?? result.response ?? {};
-    const all = [...(data.items || []), ...(data.availableItems || []), ...(data.unSoldItems || [])];
+    const all = [...(data.items || []), ...(data.availableItems || []), ...(data.unSoldItems || []), ...(data.soldItems || [])];
     return [...new Map(all.map((item) => [String(item.id), item])).values()];
   }
   const selling = (item) => {
@@ -224,8 +224,9 @@
     } finally { active = false; }
   }
   async function listAtPurchasePrice(entry) {
+    const target = entry.listPrice ?? entry.buy;
     if (active) throw new Error('Bir piyasa işlemi sürüyor.');
-    if (!entry.bought || !entry.confirmed || entry.sold || entry.listingState || !validPrice(entry.buy)) {
+    if (!entry.bought || !entry.confirmed || entry.sold || entry.listingState || !validPrice(target) || target < 200) {
       throw new Error('Satış için alış fiyatı ve Gallery doğrulaması gerekli; kart daha önce listelenmemiş olmalı.');
     }
     if (!entry.purchasedItemId) throw new Error('Alınan kartın örnek ID’si kayıtlı değil. Eski alışlar otomatik satışa konmaz.');
@@ -246,8 +247,8 @@
       const limits = item.getPriceLimits?.();
       const minimum = Number(limits?.minimum ?? a.minPrice ?? item.minPrice ?? 150);
       const maximum = Number(limits?.maximum ?? a.maxPrice ?? item.maxPrice ?? 15000000);
-      const startingBid = previousPrice(entry.buy);
-      if (entry.buy > maximum || startingBid < minimum || startingBid >= entry.buy) throw new Error('Alış fiyatı veya başlangıç kademesi kartın güncel satış sınırlarının dışında.');
+      const startingBid = previousPrice(target);
+      if (target > maximum || startingBid < minimum || startingBid >= target) throw new Error('Alış fiyatı veya başlangıç kademesi kartın güncel satış sınırlarının dışında.');
       ensureAccount(persona);
       const piles = root.ItemPile ?? service.UTItemPileEnum ?? root.UTItemPileEnum ?? {};
       const transferPile = piles.TRANSFER ?? piles.TRANSFER_LIST ?? 5;
@@ -258,19 +259,19 @@
       if (item.hasPriceLimits?.() === false && typeof service.requestMarketData === 'function') await request(service.requestMarketData(item));
       item.clearAuction?.();
       // Native EA UI requires a start price strictly below Buy Now.
-      try { await request(service.list(item, startingBid, entry.buy, 3600)); }
+      try { await request(service.list(item, startingBid, target, 3600)); }
       catch (error) { error.uncertain = true; throw error; }
       let verified;
       try {
         for (let attempt = 0; attempt < 3; attempt++) {
           await pause(); ensureAccount(persona);
           const candidate = (await transferItems()).find((candidate) => String(candidate.id) === id);
-          if (candidate && selling(candidate) && priceOf(candidate) === entry.buy && tradeOf(candidate)) { verified = candidate; break; }
+          if (candidate && selling(candidate) && priceOf(candidate) === target && tradeOf(candidate)) { verified = candidate; break; }
         }
         if (!verified) throw new Error('Kart Transfer Listesi’nde fakat aktif satış ilanı doğrulanamadı. Satışa çıktı olarak işaretlenmedi.');
       } catch (error) { error.uncertain = true; throw error; }
       purchased.delete(keyFor(entry.card));
-      return { listed: true, price: entry.buy, startingBid, tradeId: tradeOf(verified), itemId: id };
+      return { listed: true, price: target, startingBid, tradeId: tradeOf(verified), itemId: id };
     } finally { active = false; }
   }
   function bindOwned(card) {
@@ -285,9 +286,21 @@
     ensureAccount(persona);
     if (!item) return 'missing';
     if (!ownedMatches(item, entry.card)) return 'unknown';
-    if (selling(item) && priceOf(item) === entry.buy && tradeOf(item)) return 'listed';
+    if (selling(item) && priceOf(item) === (entry.listedPrice ?? entry.listPrice ?? entry.buy) && tradeOf(item)) return 'listed';
     const a = auction(item);
     return a.isInactive?.() === true || a.tradeState === 'inactive' ? 'inactive' : 'unknown';
+  }
+  async function inspectSale(entry) {
+    const persona = account();
+    const item = (await transferItems()).find((candidate) => String(candidate.id) === String(entry.purchasedItemId));
+    ensureAccount(persona);
+    if (!item || !ownedMatches(item, entry.card)) return { state: 'unknown' };
+    const data = auction(item);
+    const price = Number(data.currentBid ?? data.getCurrentBid?.());
+    if (data.isSold?.() === true && Number.isSafeInteger(price) && price > 0 && tradeOf(item)) return { state: 'sold', price };
+    if (selling(item) && tradeOf(item)) return { state: 'listed', price: priceOf(item) };
+    if (data.isInactive?.() === true || data.tradeState === 'inactive') return { state: 'inactive' };
+    return { state: 'unknown' };
   }
   async function bindOwnedForWorkflow(card) {
     const persona = account();
@@ -298,5 +311,5 @@
     if (unique.length !== 1) throw new Error('Eski alış için tek bir kesin kart kopyası bulunamadı; otomatik satış yapılmadı.');
     return String(unique[0].id);
   }
-  H.galleryMarket = { find, peek, buy, buyAtMost, listAtPurchasePrice, ensureClubEntry, inspectListing, validPrice, previousPrice, bindOwned, bindOwnedForWorkflow, acknowledge };
+  H.galleryMarket = { find, peek, buy, buyAtMost, listAtPurchasePrice, ensureClubEntry, inspectListing, inspectSale, validPrice, previousPrice, bindOwned, bindOwnedForWorkflow, acknowledge };
 })(globalThis);

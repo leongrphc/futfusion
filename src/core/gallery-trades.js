@@ -32,6 +32,7 @@
         listingState: ['pending', 'unknown', 'listed'].includes(entry.listingState) ? entry.listingState : null,
         listingVerified: entry.listingVerified === true,
         listedPrice: finitePrice(entry.listedPrice),
+        listPrice: finitePrice(entry.listPrice),
         createdAt: Number(entry.createdAt) || 0 });
     }
     return out;
@@ -97,6 +98,13 @@
       unknownCost: priced.filter((e) => e.cost == null).length,
       soldCost: ledger.entries.filter((e) => e.sold).reduce((n, e) => n + (economics(e, ledger.taxPercent).cost ?? 0), 0) };
   }
+  function breakEven(buy, taxPercent = 5) {
+    if (!Number.isSafeInteger(buy) || buy <= 0 || !Number.isFinite(taxPercent) || taxPercent < 0 || taxPercent >= 100) return null;
+    let price = Math.max(200, Math.ceil(buy / (1 - taxPercent / 100)));
+    const step = price < 1000 ? 50 : price < 10000 ? 100 : price < 50000 ? 250 : price < 100000 ? 500 : 1000;
+    price = Math.ceil(price / step) * step;
+    return price <= 15000000 ? price : null;
+  }
   function stage(entry) {
     if (entry.sold) return 'Satıldı';
     if (entry.purchaseState || entry.listingState && !entry.listingVerified) return 'Kontrol gerekiyor';
@@ -132,6 +140,6 @@
     ledger.activeBatch = null; ledger.workflowBudget = null;
     return ledger;
   }
-  const api = { stage, accounting, record, backup, restore, empty, read, cardKey, contributions, addPlan, activeEntries, economics, summarize, finitePrice };
+  const api = { breakEven, stage, accounting, record, backup, restore, empty, read, cardKey, contributions, addPlan, activeEntries, economics, summarize, finitePrice };
   if (node) module.exports = api; else root.FutFox.galleryTrades = api;
 })(globalThis);

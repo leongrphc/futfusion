@@ -26,7 +26,7 @@
           if (entry.listingState || entry.bought && entry.purchasedItemId) {
             emit(entry, index, 'Önceki satış isteği Transfer Listesi’nden kontrol ediliyor…');
             const status = await H.galleryMarket.inspectListing(entry);
-            if (status === 'listed') { write(entry.key, { listingState: 'listed', listingVerified: true, listedPrice: entry.buy, sell: entry.buy }); summary.done++; continue; }
+            if (status === 'listed') { write(entry.key, { listingState: 'listed', listingVerified: true, listedPrice: entry.listedPrice ?? entry.listPrice ?? entry.buy, sell: entry.listedPrice ?? entry.listPrice ?? entry.buy }); summary.done++; continue; }
             if (entry.listingState && status !== 'inactive') throw new Error('Önceki satışın sonucu belirsiz; Transfer Listesi’ni kontrol et.');
             if (entry.listingState) { write(entry.key, { listingState: null, listingVerified: false }); entry = getEntry(entry.key); }
           }
@@ -55,7 +55,7 @@
           check();
           if (!confirmed.confirmed) throw new Error('Kulübe giriş doğrulanmadı; satış yapılmadı.');
           write(entry.key, { confirmed: true }); entry = getEntry(entry.key);
-          emit(entry, index, `${entry.buy.toLocaleString('tr-TR')} coin Hemen Al — aktif satış ilanı açılıyor…`);
+          emit(entry, index, `${(entry.listPrice ?? entry.buy).toLocaleString('tr-TR')} coin Hemen Al — aktif satış ilanı açılıyor…`);
           phase = 'list'; write(entry.key, { listingState: 'pending' });
           const listing = await H.galleryMarket.listAtPurchasePrice(entry);
           accepted = true;

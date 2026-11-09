@@ -20,3 +20,8 @@ test('journal survives normalization and records actual status transitions', () 
   assert.equal(C.read(updated).events[0].text, 'Satışta');
   assert.equal(C.stage({ purchaseState: 'unknown' }), 'Kontrol gerekiyor');
 });
+test('break-even rounds up to valid price steps and refuses impossible tax', () => {
+  assert.equal(C.breakEven(1000, 5), 1100);
+  assert.equal(C.breakEven(9500, 5), 10000);
+  assert.equal(C.breakEven(1000, 100), null);
+});

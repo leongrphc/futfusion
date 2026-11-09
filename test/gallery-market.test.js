@@ -174,3 +174,16 @@ test('starting bid uses the correct tier immediately below Buy Now', () => {
   const f = fixture();
   for (const [buy, start] of [[200, 150], [1000, 950], [10000, 9900], [50000, 49750], [100000, 99500]]) assert.equal(f.market.previousPrice(buy), start);
 });
+test('explicit listing target is respected and sold status requires exact sold instance', async () => {
+  const f = fixture(); await f.market.find(f.card);
+  const purchase = await f.market.buy(f.card, 1000);
+  const entry = { card: f.card, bought: true, confirmed: true, buy: 1000, listPrice: 1100, purchasedItemId: purchase.itemId };
+  const listed = await f.market.listAtPurchasePrice(entry);
+  assert.equal(listed.price, 1100); assert.equal(listed.startingBid, 1000);
+  const item = f.items.find((item) => String(item.id) === purchase.itemId);
+  assert.equal((await f.market.inspectSale(entry)).state, 'listed');
+  item._auction = { tradeId: 'sold-1', isSold: () => true, currentBid: 1050 };
+  const sale = await f.market.inspectSale(entry);
+  assert.equal(sale.state, 'sold'); assert.equal(sale.price, 1050);
+  assert.equal((await f.market.inspectSale({ ...entry, purchasedItemId: 'unknown' })).state, 'unknown');
+});
