@@ -39,6 +39,7 @@
         "src/page/gallery-trades.js",
         "src/page/easysbc-gallery.js",
         "src/page/solver-client.js",
+        "src/page/panel-styles.js",
         "src/page/panel.js",
         "src/page/main.js"
       ]

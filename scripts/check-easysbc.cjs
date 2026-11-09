@@ -21,8 +21,8 @@ async function main() {
     const page = await context.newPage();
     await page.goto('https://www.ea.com/ea-sports-fc/ultimate-team/web-app/');
     await page.waitForFunction(() => window.FutFox?.easySbcUI);
-    const source = fs.readFileSync(path.join(root, 'src/page/panel.js'), 'utf8');
-    const css = vm.runInNewContext('`' + source.match(/const CSS = `([\s\S]*?)`;/)[1] + '`');
+    const source = fs.readFileSync(path.join(root, 'src/page/panel-styles.js'), 'utf8');
+    const css = vm.runInNewContext('`' + source.match(/const styles = `([\s\S]*?)`;/)[1] + '`');
     await page.evaluate((css) => {
       const H = window.FutFox;
       H.fut.galleryMemory = () => ({ persona: 'public-api-test' });

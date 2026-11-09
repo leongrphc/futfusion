@@ -39,6 +39,7 @@ async function main() {
       localStorage.setItem('futfox.settings', JSON.stringify({ lang: 'en', view: 'sbc', keepActiveSquad: true, allowMarket: false }));
     });
     await page.addScriptTag({ path: path.join(root, 'src/page/squad-apply.js') });
+    await page.addScriptTag({ path: path.join(root, 'src/page/panel-styles.js') });
     await page.addScriptTag({ path: path.join(root, 'src/page/panel.js') });
     await page.evaluate(() => window.FutFox.panel.create().refresh());
     console.log('Panel created');

@@ -16,8 +16,8 @@ async function main() {
     await page.goto('https://futfusion.test/');
     await page.evaluate(() => { window.FutFox = {}; });
     for (const file of ['src/core/bonus-tags.js', 'src/core/set-match.js', 'src/core/gallery-trades.js']) await page.addScriptTag({ path: path.join(root, file) });
-    const panel = fs.readFileSync(path.join(root, 'src/page/panel.js'), 'utf8');
-    const css = vm.runInNewContext('`' + panel.match(/const CSS = `([\s\S]*?)`;/)[1] + '`');
+    const panel = fs.readFileSync(path.join(root, 'src/page/panel-styles.js'), 'utf8');
+    const css = vm.runInNewContext('`' + panel.match(/const styles = `([\s\S]*?)`;/)[1] + '`');
     await page.evaluate((css) => {
       const H = window.FutFox;
       const quotes = new Map();
