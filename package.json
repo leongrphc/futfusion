@@ -1,0 +1,19 @@
+{
+  "name": "futfusion-sbc",
+  "version": "0.7.2",
+  "private": true,
+  "description": "FutFox squad planning with AutoPilot-inspired placement into the open SBC. Submission remains manual.",
+  "license": "GPL-3.0-only",
+  "scripts": {
+    "test": "node --test \"test/*.test.js\"",
+    "emulators": "npx -y firebase-tools@15.32.1 emulators:start --project futfox-gallery --config firebase/firebase.json",
+    "sync-players": "node scripts/sync-players.mjs",
+    "preview:gallery": "node scripts/preview-gallery.cjs",
+    "check:easysbc": "node scripts/check-easysbc.cjs",
+    "check:squad-editor": "node scripts/check-squad-editor.cjs"
+  },
+  "devDependencies": {
+    "fast-check": "4.10.2",
+    "playwright": "^1.65.0"
+  }
+}

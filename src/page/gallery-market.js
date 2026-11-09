@@ -1,0 +1,302 @@
+// Explicit user-driven Gallery purchases, using the EA market service.
+(function (root) {
+  'use strict';
+  const H = root.FutFox;
+  const quotes = new Map();
+  const pending = new Set();
+  const purchased = new Map();
+  let active = false;
+  const account = () => String(H.fut.galleryMemory().persona);
+  const keyFor = (card) => `${account()}:${H.galleryTrades.cardKey(card)}`;
+  const auction = (item) => item?.getAuctionData?.() ?? item?._auction ?? item?.auction ?? {};
+  const priceOf = (item) => Number(auction(item).buyNowPrice ?? item?.buyNowPrice);
+  const tradeOf = (item) => String(auction(item).tradeId ?? item?.tradeId ?? '');
+  const pause = () => new Promise((resolve) => setTimeout(resolve, 500));
+  const pauseSearch = () => new Promise((resolve) => setTimeout(resolve, 1000));
+  function searchPriceFloor(value) {
+    if (value < 200) return 0;
+    const step = value < 1000 ? 50 : value < 10000 ? 100 : value < 50000 ? 250 : value < 100000 ? 500 : 1000;
+    return Math.floor(value / step) * step;
+  }
+  function request(observable) {
+    return new Promise((resolve, reject) => {
+      const owner = {};
+      const timer = setTimeout(() => { observable.unobserve?.(owner); reject(new Error('EA yanıt vermedi.')); }, 20000);
+      observable.observe(owner, (obs, result) => {
+        clearTimeout(timer); obs.unobserve(owner);
+        const errorValue = result?.error?.code ?? result?.error?.status ?? result?.error;
+        const hasError = errorValue != null && errorValue !== false && errorValue !== 0 && errorValue !== '0' && errorValue !== '';
+        if (result?.success === true && !hasError) resolve(result);
+        else {
+          const code = hasError && ['string', 'number'].includes(typeof errorValue) ? errorValue : result?.status ?? '?';
+          const hint = Number(code) === 429 ? ' Arama hız sınırına ulaşıldı; bir süre sonra yeniden dene.'
+            : [401, 403].includes(Number(code)) ? ' Web App oturumunu ve varsa oyunun istediği doğrulamayı kontrol et.' : '';
+          const error = new Error(`EA işlem hatası: ${code}.${hint}`);
+          error.eaCode = code;
+          reject(error);
+        }
+      });
+    });
+  }
+  function matches(item, card) {
+    const a = auction(item);
+    const foil = typeof item?.getFoilSubtype === 'function' ? item.getFoilSubtype() !== -1 : item?.foil;
+    return String(item?.definitionId) === String(card.defId) &&
+      Number(item.rating) === Number(card.rating) && Number(item.rareflag) === Number(card.rarityId) &&
+      (card.foil ? foil === true : foil !== true) &&
+      Number.isSafeInteger(priceOf(item)) && priceOf(item) > 0 && !!tradeOf(item) &&
+      (a.expires == null || Number(a.expires) > 0) && !['closed', 'expired'].includes(a.tradeState);
+  }
+  async function search(card, maxBuy, exact = false) {
+    const criteria = new root.UTSearchCriteriaDTO();
+    criteria.type = root.SearchType?.PLAYER ?? 'player';
+    criteria.category = root.SearchCategory?.ANY ?? 'any';
+    criteria.defId = [Number(card.defId)];
+    criteria.maxBuy = maxBuy;
+    if (exact) criteria.minBuy = maxBuy;
+    root.services.Item.clearTransferMarketCache?.();
+    const result = await request(root.services.Item.searchTransferMarket(criteria, 1));
+    const items = result.data?.items ?? result.data?.data?.items ?? result.response?.items ?? result.items;
+    if (!Array.isArray(items)) throw new Error('EA piyasa sonucu okunamadı.');
+    return items.filter((item) => matches(item, card) && priceOf(item) <= maxBuy && (!exact || priceOf(item) === maxBuy))
+      .sort((a, b) => priceOf(a) - priceOf(b));
+  }
+  function ensureAccount(persona) {
+    if (account() !== persona) throw new Error('EA hesabı değişti; aramayı yeniden yap.');
+  }
+  async function find(card, progress = () => {}) {
+    if (active) throw new Error('Bir piyasa işlemi sürüyor.');
+    const key = keyFor(card);
+    if (pending.has(key)) throw new Error('Önceki alışın sonucu belirsiz. Kulübü ve transfer hedeflerini kontrol edip Web App’i yenile.');
+    if (!Number.isSafeInteger(Number(card.defId)) || !Number.isFinite(Number(card.rating)) || card.rarityId == null) throw new Error('Kart sürümü eksik; yeniden öneri hesaplat.');
+    active = true;
+    quotes.delete(key);
+    const persona = account();
+    try {
+      progress('Piyasada aranıyor…');
+      let candidates = await search(card, 15000000);
+      ensureAccount(persona);
+      if (!candidates.length) throw new Error('Bu kart sürümü için uygun Satın Al ilanı bulunamadı.');
+      let best = candidates[0];
+      // Existence queries bisect the price range; never assume page one is cheapest.
+      let low = 0, high = priceOf(best);
+      for (let step = 0; high - low > 1 && step < 25; step++) {
+        const mid = searchPriceFloor(Math.floor((low + high) / 2));
+        // The market uses discrete price steps and Buy Now starts at 200.
+        // Never request invalid bounds such as 100, 875 or 1,125 coins.
+        if (mid <= low || mid >= high) break;
+        progress(`En düşük fiyat aranıyor… ${high.toLocaleString('tr-TR')} coin veya altı`);
+        await pauseSearch(); ensureAccount(persona);
+        candidates = await search(card, mid);
+        ensureAccount(persona);
+        if (candidates.length) { best = candidates[0]; high = priceOf(best); }
+        else low = mid;
+      }
+      const quote = { price: priceOf(best), tradeId: tradeOf(best), at: Date.now(), persona, card: { ...card }, state: 'ready' };
+      quotes.set(key, quote);
+      return { price: quote.price, at: quote.at };
+    } finally { active = false; }
+  }
+  function peek(card) {
+    const quote = quotes.get(keyFor(card));
+    return quote?.state === 'ready' ? { price: quote.price, at: quote.at, expired: Date.now() - quote.at > 60000 } : null;
+  }
+  async function buy(card, displayedPrice) {
+    if (active) throw new Error('Bir piyasa işlemi sürüyor.');
+    const key = keyFor(card), quote = quotes.get(key);
+    if (!quote || quote.state !== 'ready' || quote.price !== displayedPrice || Date.now() - quote.at > 60000) {
+      throw new Error('Fiyat eskidi. Önce yeniden En ucuzu bul düğmesine bas.');
+    }
+    active = true;
+    try {
+      ensureAccount(quote.persona);
+      const items = await search(quote.card, quote.price, true);
+      ensureAccount(quote.persona);
+      if (Date.now() - quote.at > 60000) { quote.state = 'expired'; throw new Error('Fiyat doğrulanırken süre doldu. Yeniden ara.'); }
+      const item = items.find((candidate) => tradeOf(candidate) === quote.tradeId);
+      if (!item) { quote.state = 'expired'; throw new Error('Gösterilen ilan artık yok. Yeniden ara; başka fiyattan satın alınmadı.'); }
+      if (typeof root.services.Item.bid !== 'function') throw new Error('EA satın alma arayüzü bulunamadı.');
+      quote.state = 'pending'; pending.add(key);
+      // No automatic retries: a timeout may still mean EA accepted the purchase.
+      let bidResult;
+      try { bidResult = await request(root.services.Item.bid(item, quote.price)); }
+      catch (error) {
+        quote.state = 'unknown';
+        const uncertain = new Error(`${error.message} Alış sonucu belirsiz; kulübü ve transfer hedeflerini kontrol et. Tekrar alış engellendi.`);
+        uncertain.uncertain = true;
+        throw uncertain;
+      }
+      quote.state = 'bought'; pending.delete(key);
+      const owned = bidResult.data?.item ?? bidResult.response?.item ?? item;
+      purchased.set(key, owned);
+      let moveError = null;
+      try {
+        const piles = root.ItemPile ?? root.services.Item.UTItemPileEnum ?? root.UTItemPileEnum ?? {};
+        await request(root.services.Item.move(owned, piles.CLUB ?? 7));
+      } catch (error) { moveError = error.message; }
+      return { bought: true, price: quote.price, moveError, itemId: owned.id != null ? String(owned.id) : null };
+    } finally { active = false; }
+  }
+  function acknowledge(card) {
+    if (active) throw new Error('Bir piyasa işlemi sürüyor.');
+    const key = keyFor(card);
+    pending.delete(key);
+    quotes.delete(key);
+  }
+
+  async function buyAtMost(card, cap) {
+    if (active) throw new Error('Bir piyasa işlemi sürüyor.');
+    if (!Number.isSafeInteger(cap) || cap <= 0) throw new Error('Onaylanan fiyat geçersiz.');
+    const key = keyFor(card), persona = account();
+    if (pending.has(key)) throw new Error('Önceki alış sonucu belirsiz.');
+    active = true;
+    try {
+      const items = await search(card, cap);
+      ensureAccount(persona);
+      if (!items.length) throw new Error('Gösterilen fiyata veya altına ilan kalmadı; alınmadı.');
+      const item = items[0];
+      quotes.set(key, { card: { ...card }, persona, price: priceOf(item), tradeId: tradeOf(item), at: Date.now(), state: 'ready' });
+    } finally { active = false; }
+    return buy(card, quotes.get(key).price);
+  }
+
+  function ownedMatches(item, card) {
+    const foil = typeof item?.getFoilSubtype === 'function' ? item.getFoilSubtype() !== -1 : item?.foil;
+    return String(item?.definitionId) === String(card.defId) && Number(item?.rating) === Number(card.rating) &&
+      Number(item?.rareflag) === Number(card.rarityId) && (card.foil ? foil === true : foil !== true);
+  }
+  function validPrice(price) {
+    const step = price < 1000 ? 50 : price < 10000 ? 100 : price < 50000 ? 250 : price < 100000 ? 500 : 1000;
+    return Number.isSafeInteger(price) && price >= 150 && price <= 15000000 && price % step === 0;
+  }
+  function previousPrice(price) {
+    const native = root.UTCurrencyInputControl?.getIncrementBelowVal?.(price);
+    if (Number.isSafeInteger(native) && native > 0 && native < price) return native;
+    const step = price > 100000 ? 1000 : price > 50000 ? 500 : price > 10000 ? 250 : price > 1000 ? 100 : 50;
+    return price - step;
+  }
+  async function transferItems() {
+    if (typeof root.services.Item.requestTransferItems !== 'function') throw new Error('EA Transfer Listesi doğrulama arayüzü bulunamadı.');
+    const result = await request(root.services.Item.requestTransferItems());
+    const data = Array.isArray(result.response?.items) ? result.response : result.data ?? result.response ?? {};
+    const all = [...(data.items || []), ...(data.availableItems || []), ...(data.unSoldItems || [])];
+    return [...new Map(all.map((item) => [String(item.id), item])).values()];
+  }
+  const selling = (item) => {
+    const a = auction(item);
+    return a.isSelling?.() === true || (a.tradeState === 'active' && a.tradeOwner !== false && Number(a.expires ?? a.getSecondsRemaining?.() ?? 1) > 0);
+  };
+  async function resolveOwned(entry) {
+    const id = String(entry.purchasedItemId);
+    // Prefer the server's transfer DTO over a stale purchased/club instance.
+    const fromTransfer = (await transferItems()).find((item) => String(item.id) === id);
+    const item = fromTransfer ?? (H.fut.knownClubItems?.() || []).find((candidate) => String(candidate.id) === id) ?? purchased.get(keyFor(entry.card));
+    if (!item || String(item.id) !== id || !ownedMatches(item, entry.card)) throw new Error('Satın alınan kart bulunamadı. Kulübü yenile; başka kopya kullanılmadı.');
+    return item;
+  }
+  async function ensureClubEntry(entry) {
+    if (active) throw new Error('Bir piyasa işlemi sürüyor.');
+    active = true;
+    const persona = account();
+    try {
+      const item = await resolveOwned(entry);
+      ensureAccount(persona);
+      const piles = root.ItemPile ?? root.services.Item.UTItemPileEnum ?? root.UTItemPileEnum ?? {};
+      const clubPile = piles.CLUB ?? 7;
+      if (item.pile !== clubPile) await request(root.services.Item.move(item, clubPile));
+      ensureAccount(persona);
+      if (typeof root.services.Club?.search !== 'function') throw new Error('Kulübe giriş doğrulama arayüzü bulunamadı.');
+      const criteria = new root.UTSearchCriteriaDTO();
+      criteria.type = root.SearchType?.PLAYER ?? 'player';
+      criteria.defId = [Number(entry.card.playerId || entry.card.defId)];
+      criteria.count = 91; criteria.offset = 0;
+      const result = await request(root.services.Club.search(criteria));
+      ensureAccount(persona);
+      const items = result.data?.items ?? result.response?.items ?? [];
+      const owned = items.find((candidate) => String(candidate.id) === String(entry.purchasedItemId) && ownedMatches(candidate, entry.card));
+      if (!owned) throw new Error('Kartın kulübe girişi henüz doğrulanamadı. Satışa çıkarılmadı; kulübü kontrol et.');
+      purchased.set(keyFor(entry.card), owned);
+      H.fut.rememberClubItem?.(owned);
+      // Keep the Gallery's history independently of later transfer/sale operations.
+      H.fut.knownClubItems?.();
+      H.fut.galleryCards?.();
+      return { confirmed: true, itemId: String(owned.id) };
+    } finally { active = false; }
+  }
+  async function listAtPurchasePrice(entry) {
+    if (active) throw new Error('Bir piyasa işlemi sürüyor.');
+    if (!entry.bought || !entry.confirmed || entry.sold || entry.listingState || !validPrice(entry.buy)) {
+      throw new Error('Satış için alış fiyatı ve Gallery doğrulaması gerekli; kart daha önce listelenmemiş olmalı.');
+    }
+    if (!entry.purchasedItemId) throw new Error('Alınan kartın örnek ID’si kayıtlı değil. Eski alışlar otomatik satışa konmaz.');
+    const persona = account();
+    active = true;
+    try {
+      const service = root.services.Item;
+      if (typeof service.list !== 'function') throw new Error('EA satışa koyma arayüzü bulunamadı.');
+      const id = String(entry.purchasedItemId);
+      let item = await resolveOwned(entry);
+      ensureAccount(persona);
+      if (typeof item.isTradeable !== 'function' || !item.isTradeable() || item.isLimitedUse?.() || item.isActiveInTimedEvolution?.()) {
+        throw new Error('Bu kart satışa uygun değil.');
+      }
+      const a = auction(item);
+      if (a.tradeState === 'active' || a.isActive?.() || a.isSold?.()) throw new Error('Kart zaten satışta veya satılmış.');
+      if (item.hasPriceLimits?.() === false && typeof service.requestMarketData === 'function') await request(service.requestMarketData(item));
+      const limits = item.getPriceLimits?.();
+      const minimum = Number(limits?.minimum ?? a.minPrice ?? item.minPrice ?? 150);
+      const maximum = Number(limits?.maximum ?? a.maxPrice ?? item.maxPrice ?? 15000000);
+      const startingBid = previousPrice(entry.buy);
+      if (entry.buy > maximum || startingBid < minimum || startingBid >= entry.buy) throw new Error('Alış fiyatı veya başlangıç kademesi kartın güncel satış sınırlarının dışında.');
+      ensureAccount(persona);
+      const piles = root.ItemPile ?? service.UTItemPileEnum ?? root.UTItemPileEnum ?? {};
+      const transferPile = piles.TRANSFER ?? piles.TRANSFER_LIST ?? 5;
+      if (item.pile !== transferPile) await request(service.move(item, transferPile));
+      ensureAccount(persona);
+      item = (await transferItems()).find((candidate) => String(candidate.id) === id) ?? item;
+      if (!ownedMatches(item, entry.card)) throw new Error('Transfer Listesi kartı eşleşmedi.');
+      if (item.hasPriceLimits?.() === false && typeof service.requestMarketData === 'function') await request(service.requestMarketData(item));
+      item.clearAuction?.();
+      // Native EA UI requires a start price strictly below Buy Now.
+      try { await request(service.list(item, startingBid, entry.buy, 3600)); }
+      catch (error) { error.uncertain = true; throw error; }
+      let verified;
+      try {
+        for (let attempt = 0; attempt < 3; attempt++) {
+          await pause(); ensureAccount(persona);
+          const candidate = (await transferItems()).find((candidate) => String(candidate.id) === id);
+          if (candidate && selling(candidate) && priceOf(candidate) === entry.buy && tradeOf(candidate)) { verified = candidate; break; }
+        }
+        if (!verified) throw new Error('Kart Transfer Listesi’nde fakat aktif satış ilanı doğrulanamadı. Satışa çıktı olarak işaretlenmedi.');
+      } catch (error) { error.uncertain = true; throw error; }
+      purchased.delete(keyFor(entry.card));
+      return { listed: true, price: entry.buy, startingBid, tradeId: tradeOf(verified), itemId: id };
+    } finally { active = false; }
+  }
+  function bindOwned(card) {
+    const candidates = (H.fut.knownClubItems?.() || []).filter((item) => ownedMatches(item, card) && item.isTradeable?.() && item.id != null);
+    const unique = [...new Map(candidates.map((item) => [String(item.id), item])).values()];
+    if (unique.length !== 1) throw new Error('Kulüpte bu sürümün tek bir takas edilebilir kopyası bulunamadı. Kulübü yenile; birden çok kopya varsa kendin satışa koy.');
+    return String(unique[0].id);
+  }
+  async function inspectListing(entry) {
+    const persona = account();
+    const item = (await transferItems()).find((candidate) => String(candidate.id) === String(entry.purchasedItemId));
+    ensureAccount(persona);
+    if (!item) return 'missing';
+    if (!ownedMatches(item, entry.card)) return 'unknown';
+    if (selling(item) && priceOf(item) === entry.buy && tradeOf(item)) return 'listed';
+    const a = auction(item);
+    return a.isInactive?.() === true || a.tradeState === 'inactive' ? 'inactive' : 'unknown';
+  }
+  async function bindOwnedForWorkflow(card) {
+    const persona = account();
+    const candidates = [...(H.fut.knownClubItems?.() || []), ...await transferItems()]
+      .filter((item) => ownedMatches(item, card) && item.isTradeable?.() && item.id != null && !selling(item) && !auction(item).isSold?.());
+    ensureAccount(persona);
+    const unique = [...new Map(candidates.map((item) => [String(item.id), item])).values()];
+    if (unique.length !== 1) throw new Error('Eski alış için tek bir kesin kart kopyası bulunamadı; otomatik satış yapılmadı.');
+    return String(unique[0].id);
+  }
+  H.galleryMarket = { find, peek, buy, buyAtMost, listAtPurchasePrice, ensureClubEntry, inspectListing, validPrice, previousPrice, bindOwned, bindOwnedForWorkflow, acknowledge };
+})(globalThis);

@@ -1,0 +1,150 @@
+[
+  {
+    "id": 2,
+    "name": "Ligue 1 McDonald's / Arkema PL",
+    "slug": "ligue-1",
+    "sets": [
+      {
+        "id": 1,
+        "name": "OGC Nice",
+        "slug": "ogc-nice",
+        "requiredCards": 15,
+        "totalTokens": 38,
+        "startTime": 1787086800,
+        "badge": {
+          "type": "club",
+          "id": 72
+        },
+        "grades": [
+          {
+            "name": "D",
+            "threshold": 10,
+            "tokenRewards": {}
+          },
+          {
+            "name": "C",
+            "threshold": 1200,
+            "tokenRewards": {}
+          },
+          {
+            "name": "B",
+            "threshold": 2000,
+            "tokenRewards": {
+              "1": 8
+            }
+          },
+          {
+            "name": "A",
+            "threshold": 3000,
+            "tokenRewards": {
+              "1": 10
+            }
+          },
+          {
+            "name": "S",
+            "threshold": 4200,
+            "tokenRewards": {
+              "1": 20
+            }
+          }
+        ],
+        "market": {
+          "ps": [
+            {
+              "grade": "D",
+              "reachable": true,
+              "onMarket": true,
+              "budgetNeeded": 1000,
+              "taxLoss": 540,
+              "collectedCount": 0,
+              "size": 15
+            },
+            {
+              "grade": "C",
+              "reachable": true,
+              "onMarket": true,
+              "budgetNeeded": 1400,
+              "taxLoss": 595,
+              "collectedCount": 0,
+              "size": 15
+            },
+            {
+              "grade": "B",
+              "reachable": true,
+              "onMarket": true,
+              "budgetNeeded": 38750,
+              "taxLoss": 2430,
+              "collectedCount": 0,
+              "size": 15
+            },
+            {
+              "grade": "A",
+              "reachable": true,
+              "onMarket": true,
+              "budgetNeeded": 38750,
+              "taxLoss": 2430,
+              "collectedCount": 0,
+              "size": 15
+            },
+            {
+              "grade": "S",
+              "reachable": true,
+              "onMarket": true,
+              "budgetNeeded": 38750,
+              "taxLoss": 2430,
+              "collectedCount": 0,
+              "size": 15
+            }
+          ],
+          "pc": [
+            {
+              "grade": "D",
+              "reachable": true,
+              "onMarket": true,
+              "budgetNeeded": 800,
+              "taxLoss": 397,
+              "collectedCount": 0,
+              "size": 15
+            },
+            {
+              "grade": "C",
+              "reachable": true,
+              "onMarket": true,
+              "budgetNeeded": 1400,
+              "taxLoss": 545,
+              "collectedCount": 0,
+              "size": 15
+            },
+            {
+              "grade": "B",
+              "reachable": true,
+              "onMarket": true,
+              "budgetNeeded": 31750,
+              "taxLoss": 1945,
+              "collectedCount": 0,
+              "size": 15
+            },
+            {
+              "grade": "A",
+              "reachable": true,
+              "onMarket": true,
+              "budgetNeeded": 31750,
+              "taxLoss": 1945,
+              "collectedCount": 0,
+              "size": 15
+            },
+            {
+              "grade": "S",
+              "reachable": true,
+              "onMarket": true,
+              "budgetNeeded": 31750,
+              "taxLoss": 1945,
+              "collectedCount": 0,
+              "size": 15
+            }
+          ]
+        }
+      }
+    ]
+  }
+]

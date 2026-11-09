@@ -1,0 +1,24 @@
+# Runs the test suite on every push and pull request. It includes
+# test/read-only.test.js, which fails if any source file calls an
+# account-changing Web App method (bid, buy, list, move, save, submit), and
+# test/properties.test.js, which fuzzes the rating, chemistry and solver code.
+name: Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+      - run: npm ci
+      - run: npm test

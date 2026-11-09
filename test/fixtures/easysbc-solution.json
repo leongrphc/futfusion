@@ -1,0 +1,702 @@
+{
+  "setId": 1,
+  "source": "market",
+  "computedAt": "2026-11-09T12:10:38.409Z",
+  "stale": false,
+  "upToDate": false,
+  "grades": [
+    {
+      "grade": "S",
+      "reachable": true,
+      "onMarket": true,
+      "items": [
+        {
+          "resourceId": 67373561,
+          "collected": false,
+          "firstOwner": false,
+          "price": 38000,
+          "score": 3150,
+          "player": {
+            "resourceId": 67373561,
+            "assetId": 264697,
+            "clubId": 72,
+            "leagueId": 16,
+            "countryId": 97,
+            "rating": 85,
+            "preferredPosition": "LW",
+            "positions": [
+              "CAM",
+              "LM",
+              "LW",
+              "ST"
+            ],
+            "playStylesPlus": [],
+            "hasDynamicImage": true,
+            "playerUrl": "https://assets.easysbc.io/fc27/players/67373561.png",
+            "skillMoves": 4,
+            "weakFoot": 3,
+            "cardName": "Amoura",
+            "cardFont": "cruyff",
+            "name": "Mohamed Amoura",
+            "attributes": [
+              90,
+              84,
+              82,
+              89,
+              53,
+              66
+            ],
+            "versionId": 151,
+            "metalId": 3,
+            "playerRoleId": 31,
+            "metaRating": 86.26058793009008,
+            "itemScore": 3150,
+            "priceInfo": {
+              "displayPrice": 38000,
+              "source": "market"
+            }
+          }
+        },
+        {
+          "resourceId": 50596345,
+          "collected": false,
+          "firstOwner": false,
+          "price": 650,
+          "score": 160,
+          "player": {
+            "resourceId": 50596345,
+            "assetId": 264697,
+            "clubId": 72,
+            "leagueId": 16,
+            "countryId": 97,
+            "rating": 79,
+            "preferredPosition": "ST",
+            "positions": [
+              "CAM",
+              "LM",
+              "LW",
+              "ST"
+            ],
+            "playStylesPlus": [],
+            "hasDynamicImage": false,
+            "playerUrl": "https://assets.easysbc.io/fc27/players/264697.png",
+            "skillMoves": 4,
+            "weakFoot": 3,
+            "cardName": "Amoura",
+            "cardFont": "cruyff",
+            "name": "Mohamed Amoura",
+            "attributes": [
+              87,
+              81,
+              71,
+              86,
+              47,
+              60
+            ],
+            "versionId": 0,
+            "metalId": 3,
+            "playerRoleId": 32,
+            "metaRating": 80.60462469208863,
+            "itemScore": 160,
+            "priceInfo": {
+              "displayPrice": 650,
+              "source": "market"
+            }
+          }
+        },
+        {
+          "resourceId": 239093,
+          "collected": false,
+          "firstOwner": false,
+          "price": 650,
+          "score": 120,
+          "player": {
+            "resourceId": 239093,
+            "assetId": 239093,
+            "clubId": 72,
+            "leagueId": 16,
+            "countryId": 18,
+            "rating": 77,
+            "preferredPosition": "RB",
+            "positions": [
+              "RB",
+              "RM"
+            ],
+            "playStylesPlus": [
+              12
+            ],
+            "hasDynamicImage": false,
+            "playerUrl": "https://assets.easysbc.io/fc27/players/239093.png",
+            "skillMoves": 3,
+            "weakFoot": 3,
+            "cardName": "Clauss",
+            "cardFont": "cruyff",
+            "name": "Jonathan Clauss",
+            "attributes": [
+              83,
+              68,
+              75,
+              77,
+              71,
+              69
+            ],
+            "versionId": 0,
+            "metalId": 3,
+            "playerRoleId": 4,
+            "metaRating": 79.2569341466948,
+            "itemScore": 120,
+            "priceInfo": {
+              "displayPrice": 650,
+              "source": "market"
+            }
+          }
+        },
+        {
+          "resourceId": 234239,
+          "collected": false,
+          "firstOwner": false,
+          "price": 750,
+          "score": 100,
+          "player": {
+            "resourceId": 234239,
+            "assetId": 234239,
+            "clubId": 72,
+            "leagueId": 16,
+            "countryId": 18,
+            "rating": 76,
+            "preferredPosition": "CAM",
+            "positions": [
+              "CAM",
+              "CM",
+              "RM",
+              "RW",
+              "ST"
+            ],
+            "playStylesPlus": [],
+            "hasDynamicImage": false,
+            "playerUrl": "https://assets.easysbc.io/fc27/players/234239.png",
+            "skillMoves": 4,
+            "weakFoot": 3,
+            "cardName": "Hein",
+            "cardFont": "cruyff",
+            "name": "Gauthier Hein",
+            "attributes": [
+              76,
+              76,
+              74,
+              79,
+              36,
+              57
+            ],
+            "versionId": 0,
+            "metalId": 3,
+            "playerRoleId": 31,
+            "metaRating": 74.42121761087873,
+            "itemScore": 100,
+            "priceInfo": {
+              "displayPrice": 750,
+              "source": "market"
+            }
+          }
+        },
+        {
+          "resourceId": 50592055,
+          "collected": false,
+          "firstOwner": false,
+          "price": 650,
+          "score": 100,
+          "player": {
+            "resourceId": 50592055,
+            "assetId": 260407,
+            "clubId": 72,
+            "leagueId": 16,
+            "countryId": 108,
+            "rating": 76,
+            "preferredPosition": "ST",
+            "positions": [
+              "ST"
+            ],
+            "playStylesPlus": [],
+            "hasDynamicImage": false,
+            "playerUrl": "https://assets.easysbc.io/fc27/players/260407.png",
+            "skillMoves": 4,
+            "weakFoot": 4,
+            "cardName": "Wahi",
+            "cardFont": "cruyff",
+            "name": "Elye Wahi",
+            "attributes": [
+              89,
+              75,
+              64,
+              76,
+              31,
+              65
+            ],
+            "versionId": 0,
+            "metalId": 3,
+            "playerRoleId": 41,
+            "metaRating": 70.78811229684136,
+            "itemScore": 100,
+            "priceInfo": {
+              "displayPrice": 650,
+              "source": "market"
+            }
+          }
+        },
+        {
+          "resourceId": 235633,
+          "collected": false,
+          "firstOwner": false,
+          "price": 800,
+          "score": 100,
+          "player": {
+            "resourceId": 235633,
+            "assetId": 235633,
+            "clubId": 72,
+            "leagueId": 16,
+            "countryId": 136,
+            "rating": 76,
+            "preferredPosition": "GK",
+            "positions": [
+              "GK"
+            ],
+            "playStylesPlus": [],
+            "hasDynamicImage": false,
+            "playerUrl": "https://assets.easysbc.io/fc27/players/235633.png",
+            "skillMoves": 1,
+            "weakFoot": 3,
+            "cardName": "Diouf",
+            "cardFont": "cruyff",
+            "name": "Yehvann Diouf",
+            "attributes": [
+              79,
+              73,
+              74,
+              78,
+              50,
+              72
+            ],
+            "versionId": 0,
+            "metalId": 3,
+            "playerRoleId": 1,
+            "metaRating": 77.90480769230768,
+            "itemScore": 100,
+            "priceInfo": {
+              "displayPrice": 800,
+              "source": "market"
+            }
+          }
+        },
+        {
+          "resourceId": 250724,
+          "collected": false,
+          "firstOwner": false,
+          "price": 1000,
+          "score": 35,
+          "player": {
+            "resourceId": 250724,
+            "assetId": 250724,
+            "clubId": 72,
+            "leagueId": 16,
+            "countryId": 103,
+            "rating": 72,
+            "preferredPosition": "RM",
+            "positions": [
+              "LM",
+              "LW",
+              "RM",
+              "RW"
+            ],
+            "playStylesPlus": [],
+            "hasDynamicImage": false,
+            "playerUrl": "https://assets.easysbc.io/fc27/players/250724.png",
+            "skillMoves": 3,
+            "weakFoot": 2,
+            "cardName": "Ngoumou",
+            "cardFont": "cruyff",
+            "name": "Nathan Ngoumou",
+            "attributes": [
+              87,
+              70,
+              64,
+              71,
+              33,
+              63
+            ],
+            "versionId": 0,
+            "metalId": 2,
+            "playerRoleId": 28,
+            "metaRating": 64.79692841207553,
+            "itemScore": 35,
+            "priceInfo": {
+              "displayPrice": 1000,
+              "source": "market"
+            }
+          }
+        },
+        {
+          "resourceId": 252960,
+          "collected": false,
+          "firstOwner": false,
+          "price": 950,
+          "score": 35,
+          "player": {
+            "resourceId": 252960,
+            "assetId": 252960,
+            "clubId": 72,
+            "leagueId": 16,
+            "countryId": 46,
+            "rating": 71,
+            "preferredPosition": "LW",
+            "positions": [
+              "CAM",
+              "LM",
+              "LW",
+              "ST"
+            ],
+            "playStylesPlus": [],
+            "hasDynamicImage": false,
+            "playerUrl": "https://assets.easysbc.io/fc27/players/252960.png",
+            "skillMoves": 3,
+            "weakFoot": 3,
+            "cardName": "Jansson",
+            "cardFont": "cruyff",
+            "name": "Isak Jansson",
+            "attributes": [
+              83,
+              66,
+              60,
+              74,
+              41,
+              67
+            ],
+            "versionId": 0,
+            "metalId": 2,
+            "playerRoleId": 32,
+            "metaRating": 69.55886555242853,
+            "itemScore": 35,
+            "priceInfo": {
+              "displayPrice": 950,
+              "source": "market"
+            }
+          }
+        },
+        {
+          "resourceId": 80063,
+          "collected": false,
+          "firstOwner": false,
+          "price": 600,
+          "score": 20,
+          "player": {
+            "resourceId": 80063,
+            "assetId": 80063,
+            "clubId": 72,
+            "leagueId": 16,
+            "countryId": 18,
+            "rating": 61,
+            "preferredPosition": "CM",
+            "positions": [
+              "CDM",
+              "CM"
+            ],
+            "playStylesPlus": [],
+            "hasDynamicImage": false,
+            "playerUrl": "https://assets.easysbc.io/fc27/players/80063.png",
+            "skillMoves": 3,
+            "weakFoot": 3,
+            "cardName": "Coulibaly",
+            "cardFont": "cruyff",
+            "name": "Djibril Coulibaly",
+            "attributes": [
+              70,
+              48,
+              58,
+              63,
+              58,
+              70
+            ],
+            "versionId": 0,
+            "metalId": 1,
+            "playerRoleId": 49,
+            "metaRating": 61.24391467284083,
+            "itemScore": 20,
+            "priceInfo": {
+              "displayPrice": 600,
+              "source": "market"
+            }
+          }
+        },
+        {
+          "resourceId": 87433,
+          "collected": false,
+          "firstOwner": false,
+          "price": 550,
+          "score": 20,
+          "player": {
+            "resourceId": 87433,
+            "assetId": 87433,
+            "clubId": 72,
+            "leagueId": 16,
+            "countryId": 18,
+            "rating": 60,
+            "preferredPosition": "CM",
+            "positions": [
+              "CDM",
+              "CM"
+            ],
+            "playStylesPlus": [],
+            "hasDynamicImage": false,
+            "playerUrl": "https://assets.easysbc.io/fc27/players/87433.png",
+            "skillMoves": 3,
+            "weakFoot": 2,
+            "cardName": "Mandza",
+            "cardFont": "cruyff",
+            "name": "Xavier Junior Mandza",
+            "attributes": [
+              70,
+              55,
+              58,
+              60,
+              56,
+              69
+            ],
+            "versionId": 0,
+            "metalId": 1,
+            "playerRoleId": 49,
+            "metaRating": 62.11432203253471,
+            "itemScore": 20,
+            "priceInfo": {
+              "displayPrice": 550,
+              "source": "market"
+            }
+          }
+        },
+        {
+          "resourceId": 82740,
+          "collected": false,
+          "firstOwner": false,
+          "price": 600,
+          "score": 20,
+          "player": {
+            "resourceId": 82740,
+            "assetId": 82740,
+            "clubId": 72,
+            "leagueId": 16,
+            "countryId": 18,
+            "rating": 64,
+            "preferredPosition": "ST",
+            "positions": [
+              "ST"
+            ],
+            "playStylesPlus": [],
+            "hasDynamicImage": false,
+            "playerUrl": "https://assets.easysbc.io/fc27/players/82740.png",
+            "skillMoves": 2,
+            "weakFoot": 3,
+            "cardName": "Diallo",
+            "cardFont": "cruyff",
+            "name": "Zoumana Diallo",
+            "attributes": [
+              77,
+              61,
+              45,
+              62,
+              24,
+              65
+            ],
+            "versionId": 0,
+            "metalId": 1,
+            "playerRoleId": 44,
+            "metaRating": 59.30548532837551,
+            "itemScore": 20,
+            "priceInfo": {
+              "displayPrice": 600,
+              "source": "market"
+            }
+          }
+        },
+        {
+          "resourceId": 87422,
+          "collected": false,
+          "firstOwner": false,
+          "price": 600,
+          "score": 20,
+          "player": {
+            "resourceId": 87422,
+            "assetId": 87422,
+            "clubId": 72,
+            "leagueId": 16,
+            "countryId": 18,
+            "rating": 62,
+            "preferredPosition": "GK",
+            "positions": [
+              "GK"
+            ],
+            "playStylesPlus": [],
+            "hasDynamicImage": false,
+            "playerUrl": "https://assets.easysbc.io/fc27/players/87422.png",
+            "skillMoves": 1,
+            "weakFoot": 3,
+            "cardName": "Ponsot",
+            "cardFont": "cruyff",
+            "name": "Martin Ponsot",
+            "attributes": [
+              63,
+              60,
+              68,
+              64,
+              47,
+              58
+            ],
+            "versionId": 0,
+            "metalId": 1,
+            "playerRoleId": 1,
+            "metaRating": 69.89595273788073,
+            "itemScore": 20,
+            "priceInfo": {
+              "displayPrice": 600,
+              "source": "market"
+            }
+          }
+        },
+        {
+          "resourceId": 80689,
+          "collected": false,
+          "firstOwner": false,
+          "price": 600,
+          "score": 20,
+          "player": {
+            "resourceId": 80689,
+            "assetId": 80689,
+            "clubId": 72,
+            "leagueId": 16,
+            "countryId": 129,
+            "rating": 61,
+            "preferredPosition": "RB",
+            "positions": [
+              "RB",
+              "RM"
+            ],
+            "playStylesPlus": [],
+            "hasDynamicImage": false,
+            "playerUrl": "https://assets.easysbc.io/fc27/players/80689.png",
+            "skillMoves": 3,
+            "weakFoot": 3,
+            "cardName": "Koutoune",
+            "cardFont": "cruyff",
+            "name": "Hamza Koutoune",
+            "attributes": [
+              75,
+              31,
+              49,
+              59,
+              55,
+              50
+            ],
+            "versionId": 0,
+            "metalId": 1,
+            "playerRoleId": 4,
+            "metaRating": 64.68409934856723,
+            "itemScore": 20,
+            "priceInfo": {
+              "displayPrice": 600,
+              "source": "market"
+            }
+          }
+        },
+        {
+          "resourceId": 75925,
+          "collected": false,
+          "firstOwner": false,
+          "price": 700,
+          "score": 20,
+          "player": {
+            "resourceId": 75925,
+            "assetId": 75925,
+            "clubId": 72,
+            "leagueId": 16,
+            "countryId": 18,
+            "rating": 64,
+            "preferredPosition": "CDM",
+            "positions": [
+              "CDM",
+              "CM"
+            ],
+            "playStylesPlus": [],
+            "hasDynamicImage": false,
+            "playerUrl": "https://assets.easysbc.io/fc27/players/75925.png",
+            "skillMoves": 2,
+            "weakFoot": 3,
+            "cardName": "Everton Pereira",
+            "cardFont": "cruyff",
+            "name": "Everton Pereira",
+            "attributes": [
+              54,
+              51,
+              56,
+              60,
+              61,
+              62
+            ],
+            "versionId": 0,
+            "metalId": 1,
+            "playerRoleId": 49,
+            "metaRating": 56.131720628778375,
+            "itemScore": 20,
+            "priceInfo": {
+              "displayPrice": 700,
+              "source": "market"
+            }
+          }
+        },
+        {
+          "resourceId": 257235,
+          "collected": false,
+          "firstOwner": false,
+          "price": 600,
+          "score": 20,
+          "player": {
+            "resourceId": 257235,
+            "assetId": 257235,
+            "clubId": 72,
+            "leagueId": 16,
+            "countryId": 97,
+            "rating": 64,
+            "preferredPosition": "GK",
+            "positions": [
+              "GK"
+            ],
+            "playStylesPlus": [],
+            "hasDynamicImage": false,
+            "playerUrl": "https://assets.easysbc.io/fc27/players/257235.png",
+            "skillMoves": 1,
+            "weakFoot": 3,
+            "cardName": "Boulhendi",
+            "cardFont": "cruyff",
+            "name": "Teddy Boulhendi",
+            "attributes": [
+              65,
+              62,
+              63,
+              64,
+              49,
+              61
+            ],
+            "versionId": 0,
+            "metalId": 1,
+            "playerRoleId": 1,
+            "metaRating": 69.01217948717948,
+            "itemScore": 20,
+            "priceInfo": {
+              "displayPrice": 600,
+              "source": "market"
+            }
+          }
+        }
+      ],
+      "budgetNeeded": 38000,
+      "taxLoss": 2385,
+      "totalScore": 4862
+    }
+  ]
+}

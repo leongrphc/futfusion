@@ -1,0 +1,41 @@
+{
+  "manifest_version": 3,
+  "name": "FutFusion SBC",
+  "version": "0.3.0",
+  "description": "FutFox squad planning with AutoPilot-inspired placement into the open SBC. Submission remains manual.",
+  "icons": {
+    "16": "icons/icon16.png",
+    "32": "icons/icon32.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://www.ea.com/*ea-sports-fc/ultimate-team/web-app/*"
+      ],
+      "world": "MAIN",
+      "run_at": "document_idle",
+      "js": [
+        "src/core/i18n.js",
+        "src/core/requirements.js",
+        "src/core/rating.js",
+        "src/core/chemistry.js",
+        "src/core/solver.js",
+        "src/core/streamlined.js",
+        "src/core/gallery.js",
+        "src/core/bonus-tags.js",
+        "src/core/set-match.js",
+        "src/core/gallery-trades.js",
+        "src/page/fut-adapter.js",
+        "src/page/gallery-source.js",
+        "src/page/art.js",
+        "src/page/squad-apply.js",
+        "src/page/gallery-market.js",
+        "src/page/gallery-trades.js",
+        "src/page/panel.js",
+        "src/page/main.js"
+      ]
+    }
+  ]
+}

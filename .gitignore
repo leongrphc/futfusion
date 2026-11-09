@@ -1,0 +1,11 @@
+.DS_Store
+.vercel
+node_modules/
+.claude/
+*.zip
+
+# Firebase emulator logs
+*-debug.log
+
+# Gallery screenshots and the sets files made from them
+gallery-import/
