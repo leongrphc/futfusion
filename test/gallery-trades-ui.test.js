@@ -105,3 +105,14 @@ test('batch failure keeps player name and real EA error visible after summary re
   assert.ok(f.find('Durduruldu · 0 başarılı · 1 hata · 0 atlandı'));
   assert.ok(f.find('Son hata: <Player>: EA işlem hatası: 429. Arama hız sınırı.'));
 });
+test('resuming a team passes only the unspent portion of its persistent total budget', async () => {
+  const f = fixture(); let suppliedBudget;
+  f.localStorage.setItem('futfusion.galleryTrades.v1.account-a', JSON.stringify({ ...core.empty(), workflowBudget: 5000,
+    activeBatch: { id: 'resume', targetId: 'set-a', name: 'Resume team', keys: ['101:base', '102:base'] },
+    entries: [{ card: f.card, sets: [], bought: true, buy: 1000, purchasedItemId: 'owned-1' }, { card: { ...f.card, defId: 102 }, sets: [] }] }));
+  f.setMarket({ peek: () => ({ price: 2000 }), validPrice: () => true });
+  f.setBatch({ run: async (options) => { suppliedBudget = options.budget; return { done: 0, failed: 0, skipped: 0, spent: 0 }; } });
+  await f.find('Tümünü yap · 2 kart · 5.000 coin bütçe').attrs.onclick();
+  assert.equal(suppliedBudget, 4000);
+  assert.equal(f.read().workflowBudget, 5000);
+});

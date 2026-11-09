@@ -36,7 +36,8 @@
     const listable = entries.filter((e) => e.bought && e.confirmed && !e.sold && !e.listingState && e.purchasedItemId && H.galleryMarket?.validPrice?.(e.listPrice ?? e.buy));
     const resaleTotal = listable.reduce((sum, e) => sum + (e.listPrice ?? e.buy), 0);
     const workflowEntries = entries.filter((e) => !e.sold && !(e.listingState === 'listed' && e.listingVerified) && !e.purchaseState);
-    const workflowBudget = ledger.workflowBudget ?? (priced.length === buyable.length ? buyCap : null);
+    const activeSpent = entries.filter((e) => e.bought).reduce((sum, e) => sum + (e.buy || 0), 0);
+    const workflowBudget = ledger.workflowBudget ?? (priced.length === buyable.length ? buyCap + activeSpent : null);
     const strictWrite = (entryKey, patch) => {
       if (String(H.fut.galleryMemory().persona) !== String(persona)) throw new Error('EA hesabı değişti.');
       const latest = C.read(JSON.parse(root.localStorage.getItem(key) || 'null'));
@@ -128,7 +129,7 @@
       el('input', { type: 'number', min: '0', step: '1', inputmode: 'numeric', disabled: marketBusy, value: entry[field] ?? '', placeholder: 'Bilinmiyor',
         onchange: (event) => {
           const value = C.finitePrice(event.target.value);
-          if (event.target.value !== '' && (value == null || field === 'listPrice' && (!H.galleryMarket?.validPrice(value) || value < 200))) { message = 'Fiyat sıfır veya pozitif tam sayı olmalı.'; rerender(); return; }
+          if (event.target.value !== '' && (value == null || field === 'listPrice' && (!H.galleryMarket?.validPrice(value) || value < 200))) { message = field === 'listPrice' ? 'Hemen Al fiyatı en az 200 coin ve geçerli EA fiyat kademesinde olmalı.' : 'Fiyat sıfır veya pozitif tam sayı olmalı.'; rerender(); return; }
           update(entry, { [field]: value });
         } }),
     ]);
@@ -155,6 +156,7 @@
             persist({ ...latest, workflowBudget: amount });
           } }),
         ]),
+        el('p', { class: 'note', text: `Bu takımda doğrulanan harcama: ${fmt(activeSpent)} coin · Kalan alış bütçesi: ${workflowBudget == null ? 'bütçe gir' : fmt(Math.max(0, workflowBudget - activeSpent)) + ' coin'}` }),
         el('button', { class: 'primary', type: 'button', disabled: marketBusy || !!storageError || !workflowEntries.length || !H.galleryBatch || (buyable.length > 0 && !(workflowBudget > 0)), text: `Tümünü yap · ${workflowEntries.length} kart · ${fmt(workflowBudget || 0)} coin bütçe`, onclick: () => runBatch('all') }),
         el('p', { class: 'note', text: 'Yalnız aktif takım: en ucuzu bul → bütçe içinde al → kulübe girişini kontrol et → aktif satış ilanı aç. Önceki takımların kartlarına geçilmez.' }),
         el('details', { class: 'trade-settings' }, [el('summary', { text: 'Adımları ayrı ayrı yönet' }),
