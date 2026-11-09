@@ -40,12 +40,11 @@
       if (String(H.fut.galleryMemory().persona) !== String(persona)) throw new Error('EA hesabı değişti.');
       const latest = C.read(JSON.parse(root.localStorage.getItem(key) || 'null'));
       if (!latest.entries.some((e) => e.key === entryKey)) throw new Error('Kart listeden çıkarılmış.');
-      latest.entries = latest.entries.map((e) => e.key === entryKey ? { ...e, ...patch } : e);
-      root.localStorage.setItem(key, JSON.stringify(latest));
+      root.localStorage.setItem(key, JSON.stringify(C.record(latest, entryKey, patch)));
     };
     const update = (entry, patch) => {
       const latest = C.read(JSON.parse(root.localStorage.getItem(key) || 'null'));
-      persist({ ...latest, entries: latest.entries.map((e) => e.key === entry.key ? { ...e, ...patch } : e) });
+      persist(C.record(latest, entry.key, patch));
     };
     const marketAction = async (entry, buying = false, displayedPrice = null) => {
       if (marketBusy) return;
@@ -119,10 +118,11 @@
     ]);
     return el('section', { class: 'gallery-trades' }, [
       el('div', { class: 'trade-heading' }, [
-        el('div', {}, [el('span', { class: 'trade-eyebrow', text: 'GALLERY · KULÜBE GİRİŞ TAKİBİ' }), el('h3', { text: 'Al, kaydet, yeniden listele' })]),
+        el('div', {}, [el('span', { class: 'trade-eyebrow', text: 'GALLERY · KULÜBE GİRİŞ TAKİBİ' }), el('h3', { text: 'Kart işlem merkezi' })]),
         el('span', { class: 'trade-count', text: `${entries.length} aktif kart` }),
       ]),
       el('p', { class: 'note', text: ledger.activeBatch ? `Aktif takım: ${ledger.activeBatch.name}. Yalnız son eklediğin bu grubun kartları işlenir; bitince durur.` : 'Aktif takım yok. Oyuncuları getirip bu kadronun eksiklerini alış listesine ekle. Geçmiş oyuncular toplu işleme alınmaz.' }),
+      el('ol', { class: 'workflow-track', 'aria-label': 'İşlem aşamaları' }, ['Kadroyu seç', 'Bütçeyi belirle', 'Al ve doğrula', 'Satışı takip et'].map((label, index) => el('li', { class: index === (!entries.length ? 0 : !entries.some((e) => e.bought) ? 1 : entries.every((e) => e.listingVerified || e.sold) ? 3 : 2) ? 'current' : '', text: label }))),
       el('div', { class: 'trade-metrics' }, [
         el('div', {}, [el('span', { text: 'ALIM ÖNİZLEMESİ' }), el('strong', { text: `${fmt(buyCap)}` }), el('small', { text: `${priced.length} / ${buyable.length} bekleyen kartın fiyatı var` })]),
         el('div', {}, [el('span', { text: 'SATIŞA HAZIR' }), el('strong', { text: `${listable.length} kart` }), el('small', { text: `${fmt(resaleTotal)} coin · alış fiyatlarından` })]),
@@ -140,9 +140,11 @@
         ]),
         el('button', { class: 'primary', type: 'button', disabled: marketBusy || !!storageError || !workflowEntries.length || !H.galleryBatch || (buyable.length > 0 && !(workflowBudget > 0)), text: `Tümünü yap · ${workflowEntries.length} kart · ${fmt(workflowBudget || 0)} coin bütçe`, onclick: () => runBatch('all') }),
         el('p', { class: 'note', text: 'Yalnız aktif takım: en ucuzu bul → bütçe içinde al → kulübe girişini kontrol et → aktif satış ilanı aç. Önceki takımların kartlarına geçilmez.' }),
+        el('details', { class: 'trade-settings' }, [el('summary', { text: 'Adımları ayrı ayrı yönet' }),
         el('button', { type: 'button', disabled: marketBusy || !!storageError || !buyable.length || !H.galleryBatch, text: `1 · ${buyable.length} kartın fiyatını bul`, onclick: () => runBatch('find') }),
-        el('button', { class: 'primary', type: 'button', disabled: marketBusy || !!storageError || !priced.length || !H.galleryBatch, text: `2 · ${priced.length} kartı al · en fazla ${fmt(buyCap)} coin`, onclick: () => runBatch('buy') }),
+        el('button', { type: 'button', disabled: marketBusy || !!storageError || !priced.length || !H.galleryBatch, text: `2 · ${priced.length} kartı al · en fazla ${fmt(buyCap)} coin`, onclick: () => runBatch('buy') }),
         el('button', { type: 'button', disabled: marketBusy || !!storageError || !listable.length || !H.galleryBatch, text: `3 · ${listable.length} kartı alış fiyatından satışa koy`, onclick: () => runBatch('list') }),
+        ]),
       ]),
       el('p', { class: 'note', text: 'Gösterilen kart tavanları ve toplam bütçe aşılmaz. Satışta Hemen Al = alış fiyatı; EA gereği başlangıç bir alt fiyat kademesidir. Süre 1 saat. Açık artırmada daha düşük tutara satılabilir; vergi de kesilir.' }),
       batchStatus && String(batchStatus.persona) === String(persona) ? el('div', { class: 'trade-progress', role: 'status', 'aria-live': 'polite' }, [
@@ -193,7 +195,7 @@
           el('summary', {}, [
             el('span', { class: 'trade-rating', text: String(card.rating || '?') }),
             el('span', { class: 'trade-card-name', text: card.name || `#${card.defId}` }),
-            el('span', { class: `trade-badge${entry.listingState === 'listed' && entry.listingVerified || entry.sold ? ' done' : ''}`, text: entry.sold ? 'Satıldı' : entry.listingState === 'listed' && entry.listingVerified ? 'Satışta' : entry.listingState ? 'Satış kontrolü gerekli' : entry.confirmed ? 'Doğrulandı' : observed ? 'Hafızada' : entry.bought ? 'Alındı' : 'Alınacak' }),
+            el('span', { class: `trade-badge${entry.listingState === 'listed' && entry.listingVerified || entry.sold ? ' done' : ''}`, text: observed && !entry.bought && !entry.purchaseState ? 'Hafızada' : C.stage(entry) }),
           ]),
           el('p', { class: 'note', text: `Kart sürümü: ${card.rarityId ?? '?'} · Kart ID: ${card.defId} · ${entry.sets.length} sete katkı adayı` }),
           el('p', { class: 'note', text: entry.sets.map((s) => s.name).join(' · ') }),
@@ -238,7 +240,24 @@
         el('p', { class: 'note', text: 'Önceki takımların kayıtları saklanır; aktif sıra bu kartları almaz, taşımaz veya satışa çıkarmaz.' }),
         el('ul', {}, ledger.entries.filter((old) => !entries.some((entry) => entry.key === old.key)).map((old) => el('li', { text: `${old.card.name || old.key} · ${old.sold ? 'Satıldı' : old.listingVerified ? 'Satışta' : old.bought ? 'Önceden alındı' : 'Eski öneri'}` }))),
       ]) : null,
-      el('p', { class: 'note', text: 'Bu liste bu tarayıcıda, EA hesabına göre ayrı saklanır. Gallery Export dosyasına dahil değildir. Yeni aldığın kartları görmek için Club → Load my club ile yenile.' }),
+      el('details', { class: 'trade-settings' }, [
+        el('summary', { text: 'Hesap özeti ve işlem günlüğü' }),
+        ...Object.entries({ 'Gerçekleşen alış': C.accounting(ledger).spent, 'Satış bekleyen kartlarda bağlı': C.accounting(ledger).tied, 'Beklenen net satış geliri': C.accounting(ledger).expected, 'Gerçekleşen net sonuç': C.accounting(ledger).realized }).map(([label, value]) => el('p', { class: 'note', text: `${label}: ${fmt(value)} coin` })),
+        el('p', { class: 'note', text: 'Net sonuç yalnız satıldı olarak doğrulanan, alış ve satış fiyatı girilmiş kartları içerir. Pozitif değer kârdır.' }),
+        el('ul', { class: 'event-log' }, [...ledger.events].reverse().map((event) => el('li', { text: `${new Date(event.at).toLocaleString('tr-TR')} · ${event.name} · ${event.text}` }))),
+        !ledger.events.length ? el('p', { class: 'note', text: 'Yeni işlemlerin burada kaydedilecek.' }) : null,
+      ]),
+      el('details', { class: 'trade-settings' }, [el('summary', { text: 'İşlem geçmişini yedekle' }),
+        el('p', { class: 'note', text: 'Yedek bu EA hesabının alış listesini ve günlüğünü içerir. Yedeği yüklemek mevcut listeyi değiştirir; eski takım ve bütçe otomatik başlatılmaz.' }),
+        el('button', { type: 'button', text: 'Yedeği indir', disabled: marketBusy, onclick: () => {
+          const url = URL.createObjectURL(new Blob([JSON.stringify(C.backup(ledger, persona), null, 2)], { type: 'application/json' }));
+          const link = document.createElement('a'); link.href = url; link.download = `futfusion-trades-${Date.now()}.json`; link.click(); setTimeout(() => URL.revokeObjectURL(url), 1000);
+        } }),
+        el('label', { class: 'file' }, ['Yedeği yükle', el('input', { type: 'file', accept: '.json', disabled: marketBusy, 'aria-label': 'İşlem yedeğini yükle', onchange: async (event) => {
+          try { const file = event.target.files[0]; if (!file) return; if (file.size > 3000000) throw new Error('Yedek en fazla 3 MB olabilir.'); const restored = C.restore(JSON.parse(await file.text()), persona); if (marketBusy) throw new Error('Önce devam eden işlemi bitir.'); persist(restored, 'Yedek yüklendi. Yeni bir kadro seçerek devam edebilirsin.'); }
+          catch (error) { message = error.message; rerender(); }
+        } })]),
+      ]),
     ].filter(Boolean));
   }
   H.galleryTradeUI = { render };

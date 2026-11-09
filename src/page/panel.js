@@ -481,6 +481,13 @@
     .trade-progress { background: #EAF0FF; border-color: #2864DC; }
     .gallery-trades .trade-heading h3, .easy-gallery .trade-heading h3 { color: #172B46; }
     .trade-entry { background: #FFFFFF; }
+    .workflow-track { list-style: none; display: grid; grid-template-columns: repeat(4, 1fr); padding: 0; margin: 6px 0 12px; gap: 4px; counter-reset: workflow; }
+    .workflow-track li { counter-increment: workflow; border-top: 3px solid #CDD7E5; padding-top: 9px; font-size: 10px; color: #53657D; }
+    .workflow-track li::before { content: counter(workflow) '. '; font-weight: 700; }
+    .workflow-track li.current { border-color: #1659D5; color: #1659D5; font-weight: 650; }
+    .trade-batch > details { display: grid; }
+    .trade-batch > details > button { width: 100%; margin-top: 7px; }
+    .event-log { max-height: 260px; overflow-y: auto; padding-inline-start: 20px; font-size: 11px; color: #53657D; line-height: 1.8; }
     .workspace-intro { display: grid; gap: 5px; padding-bottom: 18px; border-bottom: 1px solid #CDD7E5; }
     .workspace-intro h2 { font: 650 25px/1.2 'Bahnschrift', 'Segoe UI', sans-serif; color: #172B46; text-transform: none; letter-spacing: -.03em; margin: 0; }
     .workspace-intro p { margin: 0; font-size: 12px; color: #53657D; line-height: 1.6; }

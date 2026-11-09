@@ -58,6 +58,7 @@ async function main() {
     }, css);
     for (const file of ['src/page/gallery-batch.js', 'src/page/gallery-trades.js']) await page.addScriptTag({ path: path.join(root, file) });
     await page.evaluate(() => window.renderGalleryPreview());
+    await page.getByText('Adımları ayrı ayrı yönet', { exact: true }).click();
     await page.getByRole('button', { name: '1 · 2 kartın fiyatını bul', exact: true }).click();
     await page.getByText('Tamamlandı · 2 başarılı · 0 hata · 0 atlandı', { exact: true }).waitFor();
     const output = path.join(root, 'artifacts/gallery'); fs.mkdirSync(output, { recursive: true });
@@ -83,6 +84,7 @@ async function main() {
       window.previewSearchError = 'EA işlem hatası: 429. Arama hız sınırına ulaşıldı.';
       window.renderGalleryPreview();
     });
+    await page.getByText('Adımları ayrı ayrı yönet', { exact: true }).click();
     await page.getByRole('button', { name: '1 · 1 kartın fiyatını bul', exact: true }).click();
     await page.getByText('Son hata: Dimarco: EA işlem hatası: 429. Arama hız sınırına ulaşıldı.', { exact: true }).waitFor();
     await page.screenshot({ path: path.join(output, 'search-error.png') });
