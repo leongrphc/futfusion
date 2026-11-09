@@ -1,11 +1,11 @@
-# Contributing to FutFox
+# Contributing to FutFusion
 
 Thanks for helping. Bug reports, ideas and pull requests are all welcome.
 
 ## Reporting bugs and asking for features
 
-Open an [issue](https://github.com/abouhilalbadr/futfox/issues). For a bug, include what you
-did, what you expected, what happened, the FutFox version (from `manifest.json`) and your Chrome
+Open an [issue](https://github.com/leongrphc/futfusion/issues). For a bug, include what you
+did, what you expected, what happened, the FutFusion version (from `manifest.json`) and your Chrome
 version. A screenshot of the panel helps.
 
 Security problems go through private reporting instead of an issue; see [SECURITY.md](SECURITY.md).
@@ -31,9 +31,8 @@ Security problems go through private reporting instead of an issue; see [SECURIT
 
 A pull request is merged only when it meets all of these:
 
-- **It stays read-only.** FutFox never buys, bids, lists, moves players, saves squads or submits
-  an SBC. `test/read-only.test.js` fails on any call to an account-changing Web App method, and
-  changes that try to get around it are not accepted.
+- **Account changes remain user initiated.** SBC placement and trading operations must check
+  account, ownership and current state. Never submit SBCs automatically or retry uncertain purchases.
 - **The checks pass.** The Tests and CodeQL workflows run on every pull request and must be green.
 - **It sends nothing about the user.** No analytics, tracking or new network requests that carry
   user data. Any new request must be described in the pull request and in the privacy policy
@@ -48,7 +47,7 @@ A pull request is merged only when it meets all of these:
 - Match the surrounding code: 2-space indentation, single quotes, semicolons, `const` and `let`
   (no `var`), and `'use strict'` inside each module.
 - Core files in `src/core` wrap their code in an immediately invoked function that exports to
-  `module.exports` in Node and to `window.FutFox` in the page; keep them free of DOM and Web App
+  `module.exports` in Node and to `window.FutFusion` in the page; keep them free of DOM and Web App
   access so they can be tested in Node.
 - Everything that touches the Web App goes in `src/page/fut-adapter.js`.
 - Comments explain why, not what, and stay short.
@@ -58,4 +57,4 @@ A pull request is merged only when it meets all of these:
 ## License
 
 By contributing, you agree that your contributions are released under the
-[MIT license](LICENSE).
+[GPL-3.0-only license](LICENSE).

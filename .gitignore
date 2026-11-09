@@ -9,3 +9,6 @@ node_modules/
 
 # Gallery screenshots and the sets files made from them
 gallery-import/
+
+# Local unpacked release copies
+/dist/

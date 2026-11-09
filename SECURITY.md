@@ -1,13 +1,13 @@
 # Security policy
 
-FutFox is a read-only Chrome extension: it never buys, bids, lists, moves players, saves
-squads or submits SBCs. If you find a way it could change someone's account, leak data or run
-code it shouldn't, please report it privately.
+FutFusion is a browser extension that can place and save SBC squads, purchase cards,
+move them to the club and list them for sale in user-started workflows. It does not
+submit SBCs. Account isolation, unintended transactions and data exposure are in scope.
 
 ## Reporting a vulnerability
 
 Report it through GitHub's private vulnerability reporting:
-https://github.com/abouhilalbadr/futfox/security/advisories/new
+https://github.com/leongrphc/futfusion/security/advisories/new
 
 You can also open the repository's **Security** tab and choose **Report a vulnerability**.
 Please don't open a public issue, pull request or discussion for a security problem.
@@ -16,14 +16,12 @@ Include:
 
 - what you found and what an attacker could do with it,
 - the steps to reproduce it,
-- the FutFox version (from `manifest.json`) and your Chrome version.
+- the FutFusion version (from `manifest.json`) and your Chrome version.
 
 ## What happens next
 
-- You get a first reply within 7 days, confirming whether the report is a vulnerability.
-- A confirmed vulnerability is fixed on `main` as soon as possible, aiming for 30 days.
-- Disclosure is coordinated with you: the advisory is published once the fix is released,
-  with credit to you unless you'd rather stay anonymous.
+Reports are reviewed by the maintainer. Disclosure is coordinated after a fix is available.
+Response and resolution times are not guaranteed.
 
 ## Supported versions
 

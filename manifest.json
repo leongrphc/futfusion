@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "FutFusion SBC",
-  "version": "0.8.0",
+  "version": "0.8.1",
   "description": "FutFusion: SBC squad workbench, protected club cards and budget-aware Gallery trading.",
   "icons": {
     "16": "icons/icon16.png",
