@@ -54,7 +54,7 @@ async function main() {
     assert.equal(await page.getByRole('button', { name: 'Oyuncu ekle', exact: true, includeHidden: true }).count(), 0);
     await page.getByRole('button', { name: 'İleri al', exact: true }).click();
     assert.equal(await page.getByRole('button', { name: 'Oyuncu ekle', exact: true, includeHidden: true }).count(), 1);
-    await page.getByRole('button', { name: 'Solve Squad', exact: true }).click();
+    await page.getByRole('button', { name: 'Apply squad', exact: true }).click();
     await page.getByText(/10 oyuncu yerleştirildi ve kaydedildi\. 1 yuva boş bırakıldı/).waitFor();
     assert.equal(await page.evaluate(() => window.savedSquads.at(-1).filter(Boolean).length), 10);
     await page.locator('.manual-slot-actions').filter({ has: page.getByRole('button', { name: 'Oyuncu ekle', exact: true, includeHidden: true }) }).locator('summary').click();

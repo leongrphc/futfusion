@@ -493,6 +493,10 @@
     .workspace-intro p { margin: 0; font-size: 12px; color: #53657D; line-height: 1.6; }
     .workspace-status { display: flex; align-items: center; gap: 7px; font-size: 11px; color: #53657D; margin-top: 5px; }
     .workspace-status::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: #13734F; }
+    .action-bar { display: grid; gap: 8px; background: #FFFFFF; border-top: 1px solid #CDD7E5; padding: 12px 22px; flex: none; box-shadow: 0 -4px 16px #172B4608; }
+    .action-bar button { min-height: 44px; }
+    .action-bar .note { margin: 0; max-height: 54px; overflow-y: auto; }
+    summary:focus-visible, a:focus-visible { outline: 2px solid #1659D5; outline-offset: 3px; }
     footer { background: #FFFFFF; font-size: 11px; padding: 10px 22px; }
     .error { color: #A7293B; background: #FFF0F2; padding: 12px; border-radius: 8px; overflow-wrap: anywhere; }
     @media (max-width: 420px) { .body { padding: 14px; } .trade-metrics > div { padding: 12px 7px; } .trade-metrics strong { font-size: 20px; } .panel .pair { grid-template-columns: 1fr; } }

@@ -5,6 +5,7 @@
   'use strict';
 
   const AR = {
+    'Apply squad': 'ضع التشكيلة في اللعبة',
     'FutFusion can place and save squads. Submission is manual. Not affiliated with EA.': 'يمكن لـ FutFusion وضع التشكيلة وحفظها. الإرسال يدوي. غير تابع لـ EA.',
     // ---- Panel frame -------------------------------------------------------------------
     'Resize FutFox': 'تغيير حجم FutFox',
@@ -353,6 +354,7 @@
   };
 
   const TR = {
+  "Apply squad": "Kadroyu oyuna yerleştir",
   "FutFusion can place and save squads. Submission is manual. Not affiliated with EA.": "FutFusion kadroyu yerleştirir ve kaydeder. Gönderim sana aittir. EA ile bağlantılı değildir.",
   "Resize FutFox": "FutFusion boyutunu değiştir",
   "Drag to resize": "Boyutlandırmak için sürükle",

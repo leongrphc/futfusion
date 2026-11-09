@@ -1412,12 +1412,10 @@
         el('section', {}, [
           el('h2', { text: 'Oyuna yerleştir' }),
           state.result.kind !== 'score' ? el('p', { class: 'summary', text: `${state.result.squad.filter((s) => s.player && s.player.source !== 'market').length} oyuncu yerleştirilecek · ${state.result.squad.filter((s, i) => (!state.result.required || state.result.required.has(i)) && (!s.player || s.player.source === 'market')).length} yuva boş kalacak · ${state.result.ruleResults.filter((r) => r.shortfall > 0).length} eksik şart` }) : null,
-          el('p', { text: state.result.kind === 'score' ? 'Bu SBC’nin kart seçicisini açıp Solve Squad’a bas. Önerilen kartlar seçilir; gönderme işlemi sana kalır.' : 'Bu SBC’yi Web App’te aç, ardından Solve Squad’a bas. Hesaplanan kadro yerleştirilip kaydedilir.' }),
-          el('button', { class: 'primary', type: 'button', disabled: !!state.applying, text: state.applying ? 'Yerleştiriliyor…' : 'Solve Squad', onclick: applyComputedSquad }),
-          state.applyMessage ? el('p', { class: 'note', text: state.applyMessage }) : null,
+          el('p', { text: state.result.kind === 'score' ? 'Bu SBC’nin kart seçicisini açıp alttaki yerleştirme düğmesine bas. Önerilen kartlar seçilir; gönderme işlemi sana kalır.' : 'Bu SBC’yi Web App’te aç, ardından alttaki yerleştirme düğmesine bas. Hesaplanan kadro yerleştirilip kaydedilir.' }),
           state.error ? el('p', { class: 'error', text: state.error }) : null,
         ].filter(Boolean)),
-        state.result.kind === 'score' ? null : placeSteps(false),
+        state.result.kind === 'score' ? null : el('details', { class: 'trade-settings' }, [el('summary', { text: 'Oyunda elle yerleştirme rehberi' }), placeSteps(false)]),
       ];
     }
 
@@ -1464,7 +1462,7 @@
         ]),
         el('p', { class: 'note', text: t('In the way? Drag the list, the FutFox button or this panel by its top bar anywhere on the screen. A double-click puts it back.') }),
         el('div', { class: 'row' }, [
-          el('button', { class: 'primary', type: 'button', text: t('Place it in the game'), onclick: () => { state.placing = true; state.dockClosed = false; hidePanel(); } }),
+          el('button', { type: 'button', text: t('Place it in the game'), onclick: () => { state.placing = true; state.dockClosed = false; hidePanel(); } }),
         ]),
       ]);
     }
@@ -2243,7 +2241,16 @@
         const src = ART[name] || (name === 'gallery' ? ART.token : null);
         return src ? el('img', { src, alt: '' }) : null;
       };
-      const tab = (name, label) => el('button', { type: 'button', role: 'tab', 'aria-selected': String(view === name), onclick: () => setView(name) }, [tabIcon(name), label]);
+      const tab = (name, label) => el('button', { type: 'button', role: 'tab', id: `ff-tab-${name}`, 'aria-controls': 'ff-tabpanel', tabindex: view === name ? '0' : '-1', 'aria-selected': String(view === name), onclick: () => setView(name), onkeydown: (event) => {
+        const available = TABS.filter((name) => name !== 'gallery' || H.fut.galleryEnabled);
+        let index = available.indexOf(view);
+        if (event.key === 'ArrowRight') index += H.i18n.dir() === 'rtl' ? -1 : 1;
+        else if (event.key === 'ArrowLeft') index += H.i18n.dir() === 'rtl' ? 1 : -1;
+        else if (event.key === 'Home') index = 0;
+        else if (event.key === 'End') index = available.length - 1;
+        else return;
+        event.preventDefault(); setView(available[(index + available.length) % available.length]); panel.querySelector('.tabs [aria-selected="true"]')?.focus();
+      } }, [tabIcon(name), label]);
       const page = { view, depth: pageNow(view, entry) };
       const last = state.page;
       state.page = page;
@@ -2289,10 +2296,15 @@
           ]),
           state.error ? el('p', { class: 'error', text: state.error }) : null,
         ]),
+        view === 'sbc' && state.result && state.showSquad && !state.solving ? el('div', { class: 'action-bar' }, [
+          el('span', { class: 'note', role: 'status', text: state.applyMessage || (state.result.kind === 'score' ? 'Kart seçicisi açık olmalı. Gönderim sana ait.' : state.result.feasible ? 'Kadro hazır. Oyunda aynı SBC’yi aç.' : 'Eksik kadro taslak olarak yerleştirilecek.') }),
+          el('button', { class: 'primary', type: 'button', disabled: !!state.applying, text: state.applying ? 'Yerleştiriliyor…' : t('Apply squad'), onclick: applyComputedSquad }),
+        ]) : null,
         el('footer', { text: t('FutFusion can place and save squads. Submission is manual. Not affiliated with EA.') }),
       ].filter(Boolean));
       const body = panel.querySelector('.body');
       if (body) {
+        body.id = 'ff-tabpanel'; body.setAttribute('role', 'tabpanel'); body.setAttribute('aria-labelledby', `ff-tab-${view}`);
         const intro = view === 'club' ? ['Kulübün', 'Kartlarını güncelle, korumalarını belirle ve çalışma alanını yönet.']
           : view === 'gallery' ? ['Koleksiyon planı', 'Kadronu seç, bütçeni belirle ve kartlarının ilerlemesini takip et.']
           : ['Kadro atölyesi', 'Görevi seç, kadronu oluştur ve son kontrolün ardından oyuna yerleştir.'];
