@@ -14,7 +14,7 @@
     "check:background": "node scripts/check-background-solver.cjs"
   },
   "devDependencies": {
-    "fast-check": "4.10.2",
+    "fast-check": "4.10.3",
     "playwright": "^1.65.0"
   }
 }
